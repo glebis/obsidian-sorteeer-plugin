@@ -267,7 +267,7 @@ class SorteeerModal extends Modal {
 		const actionBar = contentEl.createDiv('action-bar');
 		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), '1');
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
-		this.createActionButton(actionBar, `Move to ${moveFolder}`, 'Move note to folder', () => this.moveNote(), '2');
+		this.createActionButton(actionBar, 'Move to _archive', 'Move note to _archive folder', () => this.moveNote(), '2');
 		this.createActionButton(actionBar, 'Skip', 'Skip note', () => this.skipNote(), '3');
 		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), '4');
 
@@ -331,12 +331,14 @@ class SorteeerModal extends Modal {
 
 	async moveNote() {
 		if (this.currentNote) {
-			const targetFolder = this.app.vault.getAbstractFileByPath(this.plugin.settings.moveAction) as TFolder;
+			const targetFolder = this.app.vault.getAbstractFileByPath("_archive") as TFolder;
 			if (targetFolder) {
 				await this.app.fileManager.renameFile(this.currentNote, `${targetFolder.path}/${this.currentNote.name}`);
+				this.plugin.incrementActionStat('moveToArchive');
+				this.plugin.showNotification(`Moved to _archive: ${this.currentNote.name}`);
 				this.loadNextNote();
 			} else {
-				new FolderSuggestModal(this.app, this.plugin, this).open();
+				this.plugin.showNotification("_archive folder not found. Please create it first.");
 			}
 		}
 	}
