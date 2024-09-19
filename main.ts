@@ -618,8 +618,19 @@ class AddLinkModal extends SuggestModal<TFile> {
 	async addLink(linkText: string) {
 		if (linkText && this.parentModal.currentNote) {
 			let content = await this.app.vault.read(this.parentModal.currentNote);
-			const linkSection = `\n\n${this.plugin.settings.seeAlsoHeader}\n- [[${linkText}]]`;
-			content += linkSection;
+			const seeAlsoHeader = this.plugin.settings.seeAlsoHeader;
+			const newLink = `- [[${linkText}]]`;
+
+			if (content.includes(seeAlsoHeader)) {
+				const headerIndex = content.indexOf(seeAlsoHeader);
+				const headerEndIndex = headerIndex + seeAlsoHeader.length;
+				const beforeHeader = content.slice(0, headerEndIndex);
+				const afterHeader = content.slice(headerEndIndex);
+				content = beforeHeader + '\n' + newLink + afterHeader;
+			} else {
+				content += `\n\n${seeAlsoHeader}\n${newLink}`;
+			}
+
 			await this.app.vault.modify(this.parentModal.currentNote, content);
 			this.parentModal.displayNote(this.parentModal.currentNote);
 			this.close();
