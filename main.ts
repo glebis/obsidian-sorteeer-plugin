@@ -84,6 +84,11 @@ export default class SorteeerPlugin extends Plugin {
 	actionStats: ActionStats = {};
 	deletedNotes: DeletedNote[] = [];
 
+	openSettingsTab() {
+		this.app.setting.open();
+		this.app.setting.openTabById('sorteeer');
+	}
+
 	async onload() {
 		await this.loadSettings();
 		await this.loadActionStats();
