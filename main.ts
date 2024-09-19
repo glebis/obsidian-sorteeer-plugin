@@ -201,6 +201,13 @@ class SorteeerModal extends Modal {
 		const {contentEl} = this;
 		contentEl.empty();
 
+		const actionBar = contentEl.createDiv('action-bar');
+		this.createActionButton('Delete', () => this.deleteNote(), 1);
+		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
+		this.createActionButton(`Move to ${moveFolder}`, () => this.moveNote(), 2);
+		this.createActionButton('Skip', () => this.skipNote(), 3);
+		this.createActionButton('More', () => this.showMoreActions(), 4);
+
 		const editLink = contentEl.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
 			e.preventDefault();
@@ -231,13 +238,6 @@ class SorteeerModal extends Modal {
 		const content = await this.app.vault.read(note);
 		const noteContent = contentEl.createDiv('note-content');
 		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
-
-		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote(), '←');
-		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
-		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move to ${moveFolder}`, () => this.moveNote(), '↓');
-		this.createActionButton(actionBar, 'Skip', 'Skip to next note', () => this.skipNote(), '→');
-		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions(), '↑');
 
 		// Add event listener for keyboard shortcuts
 		contentEl.addEventListener('keydown', this.onKeyDown);
