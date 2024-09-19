@@ -524,7 +524,14 @@ class MoreActionsModal extends Modal {
 		contentEl.addClass('sorteeer-more-actions');
 
 		this.actions.forEach((action, index) => {
-			this.createActionButton(action.text, () => this.executeAction(index), index + 1);
+			const button = this.createActionButton(action.text, () => this.executeAction(index), index + 1);
+			button.addEventListener('keydown', (event: KeyboardEvent) => {
+				if (event.altKey && event.key === (index + 1).toString()) {
+					this.executeAction(index);
+					event.preventDefault();
+					this.close();
+				}
+			});
 		});
 
 		this.updateSelectedButton();
@@ -537,7 +544,7 @@ class MoreActionsModal extends Modal {
 		contentEl.removeEventListener('keydown', this.handleKeyDown);
 	}
 
-	createActionButton(text: string, callback: () => void, altNumber: number) {
+	createActionButton(text: string, callback: () => void, altNumber: number): HTMLButtonElement {
 		const button = this.contentEl.createEl('button');
 		const textEl = button.createSpan({text: text});
 		const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
@@ -546,6 +553,7 @@ class MoreActionsModal extends Modal {
 			callback();
 			this.close();
 		});
+		return button;
 	}
 
 	updateSelectedButton() {
@@ -585,39 +593,6 @@ class MoreActionsModal extends Modal {
 			event.preventDefault();
 			this.close();
 		}
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.empty();
-		contentEl.addClass('sorteeer-more-actions');
-
-		this.actions.forEach((action, index) => {
-			const button = this.createActionButton(action.text, () => this.executeAction(index), index + 1);
-			button.addEventListener('keydown', (event: KeyboardEvent) => {
-				if (event.altKey && event.key === (index + 1).toString()) {
-					this.executeAction(index);
-					event.preventDefault();
-					this.close();
-				}
-			});
-		});
-
-		this.updateSelectedButton();
-
-		contentEl.addEventListener('keydown', this.handleKeyDown);
-	}
-
-	createActionButton(text: string, callback: () => void, altNumber: number): HTMLButtonElement {
-		const button = this.contentEl.createEl('button');
-		const textEl = button.createSpan({text: text});
-		const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
-		shortcutEl.setText(`Alt+${altNumber}`);
-		button.addEventListener('click', () => {
-			callback();
-			this.close();
-		});
-		return button;
 	}
 
 	async removeTag() {
