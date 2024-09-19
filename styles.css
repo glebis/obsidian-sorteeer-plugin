@@ -175,7 +175,7 @@
 .sorteeer-close-button:hover {
     background-color: var(--interactive-accent-hover);
 }
-.sorteeer-modal button.select-folder {
+.sorteeer-modal button.sorteeer-select-folder {
     background-color: var(--interactive-accent);
     color: var(--text-on-accent);
     padding: 8px 16px;
@@ -185,6 +185,16 @@
     margin-top: 20px;
 }
 
-.sorteeer-modal button.select-folder:hover {
+.sorteeer-modal button.sorteeer-select-folder:hover {
     background-color: var(--interactive-accent-hover);
+}
+
+.sorteeer-modal .sorteeer-settings-link {
+    color: var(--text-accent);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.sorteeer-modal .sorteeer-settings-link:hover {
+    text-decoration: none;
 }

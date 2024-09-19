@@ -332,7 +332,16 @@ class SorteeerModal extends Modal {
 		contentEl.createEl('h2', {text: 'Sorteeer'});
 		contentEl.createEl('p', {text: message});
 		
-		const selectFolderButton = contentEl.createEl('button', {text: 'Select New Folder'});
+		const settingsLink = contentEl.createEl('a', {text: 'Open plugin settings', cls: 'sorteeer-settings-link'});
+		settingsLink.addEventListener('click', (e) => {
+			e.preventDefault();
+			this.close();
+			this.app.setting.openTabById('sorteeer');
+		});
+		
+		contentEl.createEl('p', {text: 'or'});
+		
+		const selectFolderButton = contentEl.createEl('button', {text: 'Select New Folder', cls: 'sorteeer-select-folder'});
 		selectFolderButton.addEventListener('click', () => {
 			new FolderSuggestModal(this.app, this.plugin, (folder: TFolder) => {
 				this.plugin.settings.sortFolder = folder.path;
