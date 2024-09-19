@@ -366,7 +366,7 @@ class SorteeerModal extends Modal {
 		const actionBar = contentEl.createDiv('action-bar');
 		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), 'Alt+←');
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
-		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move note to ${moveFolder} folder`, () => this.moveNote(), 'Alt+↓');
+		this.createActionButton(actionBar, `Move to _archive`, `Move note to _archive folder`, () => this.moveNote(), 'Alt+↓');
 		this.createActionButton(actionBar, 'Skip', 'Skip note', () => this.skipNote(), 'Alt+→');
 		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), 'Alt+↑');
 
