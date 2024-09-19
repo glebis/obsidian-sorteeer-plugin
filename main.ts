@@ -608,6 +608,18 @@ class MoreActionsModal extends Modal {
 		contentEl.addEventListener('keydown', this.handleKeyDown);
 	}
 
+	createActionButton(text: string, callback: () => void, altNumber: number): HTMLButtonElement {
+		const button = this.contentEl.createEl('button');
+		const textEl = button.createSpan({text: text});
+		const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
+		shortcutEl.setText(`Alt+${altNumber}`);
+		button.addEventListener('click', () => {
+			callback();
+			this.close();
+		});
+		return button;
+	}
+
 	async removeTag() {
 		if (this.parentModal.currentNote) {
 			let content = await this.app.vault.read(this.parentModal.currentNote);
