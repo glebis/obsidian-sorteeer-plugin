@@ -150,7 +150,7 @@ export default class SorteeerPlugin extends Plugin {
 	public handleFolderChange() {
 		if (this.sorteeerModal) {
 			this.sorteeerModal.resetNotes();
-			this.sorteeerModal.loadNextNote();
+			this.sorteeerModal.reloadWindow();
 		}
 	}
 
@@ -323,6 +323,9 @@ class SorteeerModal extends Modal {
 	}
 
 	async loadNextNote() {
+		const {contentEl} = this;
+		contentEl.empty(); // Clear previous content
+
 		const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.sortFolder) as TFolder;
 		if (!folder) {
 			this.displayEmptyFolderMessage('Invalid folder path');
@@ -366,6 +369,11 @@ class SorteeerModal extends Modal {
 	resetNotes() {
 		this.sortedNotes = [];
 		this.currentIndex = 0;
+	}
+
+	reloadWindow() {
+		this.contentEl.empty();
+		this.onOpen();
 	}
 
 	async displayNote(note: TFile) {
