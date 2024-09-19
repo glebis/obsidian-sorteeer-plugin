@@ -784,9 +784,9 @@ class SorteeerSettingTab extends PluginSettingTab {
 				.setButtonText('Select Folder')
 				.onClick(() => {
 					new FolderSuggestModal(this.app, this.plugin, (folder: TFolder) => {
-						this.plugin.settings.moveAction = folder.path;
+						this.plugin.settings.sortFolder = folder.path;
 						this.plugin.saveSettings();
-						new Notice(`Move action folder set to: ${folder.path}`);
+						new Notice(`Sort folder set to: ${folder.path}`);
 					}).open();
 				}));
 
