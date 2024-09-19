@@ -526,13 +526,6 @@ class MoreActionsModal extends Modal {
 
 		this.actions.forEach((action, index) => {
 			const button = this.createActionButton(action.text, () => this.executeAction(index), index + 1);
-			button.addEventListener('keydown', (event: KeyboardEvent) => {
-				if (event.altKey && event.key === (index + 1).toString()) {
-					this.executeAction(index);
-					event.preventDefault();
-					this.close();
-				}
-			});
 		});
 
 		this.updateSelectedButton();
@@ -545,11 +538,9 @@ class MoreActionsModal extends Modal {
 		contentEl.removeEventListener('keydown', this.handleKeyDown);
 	}
 
-	createActionButton(text: string, callback: () => void, altNumber: number): HTMLButtonElement {
+	createActionButton(text: string, callback: () => void, number: number): HTMLButtonElement {
 		const button = this.contentEl.createEl('button');
-		const textEl = button.createSpan({text: text});
-		const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
-		shortcutEl.setText(`Alt+${altNumber}`);
+		const textEl = button.createSpan({text: `${number}. ${text}`});
 		button.addEventListener('click', () => {
 			callback();
 			this.close();
@@ -574,13 +565,11 @@ class MoreActionsModal extends Modal {
 	}
 
 	handleKeyDown = (event: KeyboardEvent) => {
-		if (event.altKey) {
-			const num = parseInt(event.key);
-			if (num >= 1 && num <= this.actions.length) {
-				this.executeAction(num - 1);
-				event.preventDefault();
-				this.close();
-			}
+		const num = parseInt(event.key);
+		if (num >= 1 && num <= this.actions.length) {
+			this.executeAction(num - 1);
+			event.preventDefault();
+			this.close();
 		} else if (event.key === 'ArrowUp') {
 			this.selectedIndex = (this.selectedIndex - 1 + this.actions.length) % this.actions.length;
 			this.updateSelectedButton();
