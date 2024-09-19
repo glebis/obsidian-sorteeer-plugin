@@ -1,9 +1,9 @@
 /* Sorteeer Plugin Styles */
 
 .sorteeer-modal {
-    font-family: monospace;
-    line-height: 150%;
-    color: var(--text-muted);
+    font-family: var(--font-interface);
+    line-height: 1.5;
+    color: var(--text-normal);
     padding: 20px;
     width: 80vw;
     max-width: 800px;
