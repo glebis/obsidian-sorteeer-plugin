@@ -331,14 +331,14 @@ class SorteeerModal extends Modal {
 
 	async moveNote() {
 		if (this.currentNote) {
-			const targetFolder = this.app.vault.getAbstractFileByPath("_archive") as TFolder;
+			const targetFolder = this.app.vault.getAbstractFileByPath(this.plugin.settings.moveAction) as TFolder;
 			if (targetFolder) {
 				await this.app.fileManager.renameFile(this.currentNote, `${targetFolder.path}/${this.currentNote.name}`);
-				this.plugin.incrementActionStat('moveToArchive');
-				this.plugin.showNotification(`Moved to _archive: ${this.currentNote.name}`);
+				this.plugin.incrementActionStat('moveToFolder');
+				this.plugin.showNotification(`Moved to ${this.plugin.settings.moveAction}: ${this.currentNote.name}`);
 				this.loadNextNote();
 			} else {
-				this.plugin.showNotification("_archive folder not found. Please create it first.");
+				this.plugin.showNotification(`${this.plugin.settings.moveAction} folder not found. Please create it first.`);
 			}
 		}
 	}
@@ -684,6 +684,11 @@ class SorteeerSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.moveAction = value;
 					await this.plugin.saveSettings();
+				}))
+			.addButton(button => button
+				.setButtonText('Select Folder')
+				.onClick(() => {
+					new FolderSuggestModal(this.app, this.plugin, null).open();
 				}));
 
 		new Setting(containerEl)
