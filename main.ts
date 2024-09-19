@@ -125,18 +125,27 @@ class SorteeerModal extends Modal {
 		const {contentEl} = this;
 		contentEl.empty();
 
+		const titleEl = contentEl.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
+		
+		const editLink = contentEl.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
+		editLink.addEventListener('click', (e) => {
+			e.preventDefault();
+			this.app.workspace.activeLeaf.openFile(note);
+			this.close();
+		});
+
 		const content = await this.app.vault.read(note);
 		const noteContent = contentEl.createDiv('note-content');
 		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
 
 		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, '←', this.plugin.settings.deleteAction, () => this.deleteNote());
-		this.createActionButton(actionBar, '↓', this.plugin.settings.moveAction, () => this.moveNote());
-		this.createActionButton(actionBar, '↑', 'More Actions', () => this.showMoreActions());
+		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote());
+		this.createActionButton(actionBar, 'Move', this.plugin.settings.moveAction, () => this.moveNote());
+		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions());
 	}
 
-	createActionButton(container: HTMLElement, icon: string, tooltip: string, callback: () => void) {
-		const button = container.createEl('button', {text: icon});
+	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void) {
+		const button = container.createEl('button', {text: text});
 		button.title = tooltip;
 		button.addEventListener('click', callback);
 	}
