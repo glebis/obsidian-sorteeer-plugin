@@ -160,7 +160,7 @@ class SorteeerModal extends Modal {
 		const today = new Date().toDateString();
 		let count = 0;
 		for (const [action, actionCount] of Object.entries(this.plugin.actionStats)) {
-			if (action.startsWith(today)) {
+			if (action === 'noteDisplayed' || action.startsWith(today)) {
 				count += actionCount;
 			}
 		}
@@ -211,6 +211,9 @@ class SorteeerModal extends Modal {
 	async displayNote(note: TFile) {
 		const {contentEl} = this;
 		contentEl.empty();
+
+		// Increment the action stat for displaying a note
+		this.plugin.incrementActionStat('noteDisplayed');
 
 		const actionBar = contentEl.createDiv('action-bar');
 		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), '1');
