@@ -81,7 +81,9 @@
 
 .sorteeer-more-actions button,
 .sorteeer-add-link button {
-    display: block;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     width: 100%;
     margin-bottom: 10px;
     padding: 10px;
@@ -91,15 +93,17 @@
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    text-align: left;
 }
 
 .sorteeer-more-actions button .sorteeer-shortcut {
-    color: var(--text-on-accent);
+    color: var(--text-faint);
     opacity: 0.8;
+    font-size: 0.8em;
+    margin-left: 10px;
 }
 
 .sorteeer-more-actions button:last-child {
-    margin-top: 20px;
     background-color: var(--interactive-success);
 }
 
