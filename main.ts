@@ -7,7 +7,7 @@ interface SorteeerSettings {
 	moveAction: string;
 	removeTagAction: string;
 	addTagAction: string;
-	addStarAction: string;
+	bookmarkAction: string;
 	addLinkAction: string;
 	seeAlsoHeader: string;
 	dailyNoteFormat: string;
@@ -65,7 +65,7 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	moveAction: 'Archive',
 	removeTagAction: '#stub',
 	addTagAction: '#reviewed',
-	addStarAction: '⭐',
+	bookmarkAction: 'Bookmark',
 	addLinkAction: '',
 	seeAlsoHeader: 'See also',
 	dailyNoteFormat: 'YYYY-MM-DD',
@@ -509,7 +509,7 @@ class MoreActionsModal extends Modal {
 		this.actions = [
 			{text: `Remove Tag (${this.plugin.settings.removeTagAction})`, callback: () => this.removeTag()},
 			{text: `Add Tag (${this.plugin.settings.addTagAction})`, callback: () => this.addTag()},
-			{text: `Add Star (${this.plugin.settings.addStarAction})`, callback: () => this.addStar()},
+			{text: `Toggle Bookmark`, callback: () => this.addBookmark()},
 			{text: 'Add Link', callback: () => this.addLink()},
 			{text: 'Add to Daily Note', callback: () => this.addToDailyNote()},
 			{text: 'Copy Link', callback: () => this.copyNoteLink()}
@@ -605,14 +605,19 @@ class MoreActionsModal extends Modal {
 		}
 	}
 
-	async addStar() {
+	async addBookmark() {
 		if (this.parentModal.currentNote) {
-			let content = await this.app.vault.read(this.parentModal.currentNote);
-			content = `${this.plugin.settings.addStarAction} ${content}`;
-			await this.app.vault.modify(this.parentModal.currentNote, content);
+			// Toggle bookmark status
+			const isBookmarked = this.app.internalPlugins.getPluginById('bookmarks').instance.isBookmarked(this.parentModal.currentNote.path);
+			if (isBookmarked) {
+				this.app.internalPlugins.getPluginById('bookmarks').instance.removeBookmark(this.parentModal.currentNote.path);
+				this.plugin.showNotification('Bookmark removed');
+			} else {
+				this.app.internalPlugins.getPluginById('bookmarks').instance.addBookmark(this.parentModal.currentNote.path);
+				this.plugin.showNotification('Bookmark added');
+			}
+			this.plugin.incrementActionStat('toggleBookmark');
 			this.parentModal.displayNote(this.parentModal.currentNote);
-			this.plugin.incrementActionStat('addStar');
-			this.plugin.showNotification('Star added');
 		}
 	}
 
@@ -852,13 +857,13 @@ class SorteeerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Add Star Action')
-			.setDesc('Star symbol to add')
+			.setName('Bookmark Action')
+			.setDesc('Toggle bookmark for the note')
 			.addText(text => text
-				.setPlaceholder('Enter star symbol')
-				.setValue(this.plugin.settings.addStarAction)
+				.setPlaceholder('Bookmark')
+				.setValue(this.plugin.settings.bookmarkAction)
 				.onChange(async (value) => {
-					this.plugin.settings.addStarAction = value;
+					this.plugin.settings.bookmarkAction = value;
 					await this.plugin.saveSettings();
 				}));
 
