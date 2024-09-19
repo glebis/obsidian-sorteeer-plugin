@@ -340,8 +340,6 @@ class SorteeerModal extends Modal {
 
 		const titleEl = titleContainer.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
 
-		this.focusSkipButton();
-
 		const editLink = titleContainer.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
 			e.preventDefault();
@@ -377,6 +375,8 @@ class SorteeerModal extends Modal {
 		// Add footer with notes reviewed count
 		const footer = contentEl.createDiv('sorteeer-footer');
 		footer.setText(`Notes reviewed today: ${this.getNotesReviewedToday()}`);
+
+		this.focusSkipButton();
 	}
 
 	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string) {
