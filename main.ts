@@ -530,10 +530,6 @@ class MoreActionsModal extends Modal {
 		}
 	}
 
-	async addToDailyNote() {
-		await this.plugin.addToDailyNote(this.parentModal.currentNote);
-	}
-
 	copyNoteLink() {
 		if (this.parentModal.currentNote) {
 			const noteLink = this.app.fileManager.generateMarkdownLink(this.parentModal.currentNote, '');
@@ -541,6 +537,33 @@ class MoreActionsModal extends Modal {
 			this.plugin.showNotification('Note link copied to clipboard');
 			this.close();
 			this.parentModal.loadNextNote();
+		}
+	}
+
+	async addToDailyNote() {
+		if (this.parentModal.currentNote) {
+			const dailyNote = await this.getDailyNote();
+			if (dailyNote) {
+				let content = await this.app.vault.read(dailyNote);
+				const linkToAdd = `[[${this.parentModal.currentNote.basename}]]`;
+				const sectionToAdd = this.plugin.settings.dailyNoteSection;
+				
+				if (content.includes(sectionToAdd)) {
+					const parts = content.split(sectionToAdd);
+					parts[1] = `\n- ${linkToAdd}${parts[1]}`;
+					content = parts.join(sectionToAdd);
+				} else {
+					content += `\n\n${sectionToAdd}\n- ${linkToAdd}`;
+				}
+
+				await this.app.vault.modify(dailyNote, content);
+				this.plugin.incrementActionStat('addToDailyNote');
+				this.plugin.showNotification(`Added link to daily note: ${dailyNote.basename}`);
+				this.close();
+				this.parentModal.loadNextNote();
+			} else {
+				this.plugin.showNotification("Failed to find or create daily note");
+			}
 		}
 	}
 
@@ -566,10 +589,6 @@ class MoreActionsModal extends Modal {
 			this.plugin.showNotification("Failed to find or create daily note");
 			return null;
 		}
-	}
-
-	async addToDailyNote() {
-		await this.plugin.addToDailyNote(this.parentModal.currentNote);
 	}
 }
 
