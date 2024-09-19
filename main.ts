@@ -2,7 +2,7 @@ import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Set
 
 interface SorteeerSettings {
 	sortFolder: string;
-	sortOrder: 'random' | 'oldest' | 'newest';
+	sortOrder: 'random' | 'oldest' | 'newest' | 'smallest';
 	deleteAction: string;
 	moveAction: string;
 	removeTagAction: string;
@@ -115,6 +115,9 @@ class SorteeerModal extends Modal {
 				break;
 			case 'newest':
 				note = notes.sort((a, b) => b.stat.ctime - a.stat.ctime)[0];
+				break;
+			case 'smallest':
+				note = notes.sort((a, b) => a.stat.size - b.stat.size)[0];
 				break;
 		}
 
@@ -421,8 +424,9 @@ class SorteeerSettingTab extends PluginSettingTab {
 				.addOption('random', 'Random')
 				.addOption('oldest', 'Oldest First')
 				.addOption('newest', 'Newest First')
+				.addOption('smallest', 'Smallest First')
 				.setValue(this.plugin.settings.sortOrder)
-				.onChange(async (value: 'random' | 'oldest' | 'newest') => {
+				.onChange(async (value: 'random' | 'oldest' | 'newest' | 'smallest') => {
 					this.plugin.settings.sortOrder = value;
 					await this.plugin.saveSettings();
 				}));
