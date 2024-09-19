@@ -856,6 +856,11 @@ class SorteeerSettingTab extends PluginSettingTab {
 		const {containerEl} = this;
 		containerEl.empty();
 
+		const refreshDisplay = () => {
+			containerEl.empty();
+			this.display();
+		};
+
 		new Setting(containerEl)
 			.setName('Sort Folder')
 			.setDesc('Folder to sort through')
@@ -867,6 +872,7 @@ class SorteeerSettingTab extends PluginSettingTab {
 						this.plugin.settings.sortFolder = value;
 						await this.plugin.saveSettings();
 						this.plugin.handleFolderChange();
+						refreshDisplay();
 					});
 			});
 
