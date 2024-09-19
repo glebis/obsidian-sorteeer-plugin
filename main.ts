@@ -255,6 +255,10 @@ class SorteeerModal extends Modal {
 
 		// Add event listener for keyboard shortcuts
 		contentEl.addEventListener('keydown', this.onKeyDown);
+
+		// Add footer with notes reviewed count
+		const footer = contentEl.createDiv('sorteeer-footer');
+		footer.setText(`Notes reviewed today: ${this.getNotesReviewedToday()}`);
 	}
 
 	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string) {
