@@ -127,6 +127,24 @@ export default class SorteeerPlugin extends Plugin {
 		});
 
 		this.addSettingTab(new SorteeerSettingTab(this.app, this));
+
+		// Add contextual menu for folders
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, file) => {
+				if (file instanceof TFolder) {
+					menu.addItem((item) => {
+						item
+							.setTitle("Run Sorteeer on this folder")
+							.setIcon("sort")
+							.onClick(() => {
+								this.settings.sortFolder = file.path;
+								this.saveSettings();
+								this.openSorteeerModal();
+							});
+					});
+				}
+			})
+		);
 	}
 
 	async undoLastDeletion() {
@@ -325,6 +343,7 @@ class SorteeerModal extends Modal {
 		}
 
 		this.currentNote = this.sortedNotes[this.currentIndex];
+		this.contentEl.empty(); // Clear the content before displaying the new note
 		this.displayNote(this.currentNote);
 		this.currentIndex++;
 
