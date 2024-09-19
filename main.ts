@@ -872,7 +872,7 @@ class SorteeerSettingTab extends PluginSettingTab {
 						this.plugin.settings.sortFolder = value;
 						await this.plugin.saveSettings();
 						this.plugin.handleFolderChange();
-						refreshDisplay();
+						cb.setValue(value);  // Update the input field value
 					});
 			});
 
