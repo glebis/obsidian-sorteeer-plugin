@@ -487,6 +487,13 @@ class MoreActionsModal extends Modal {
 				dailyNote = await this.app.vault.create(dailyNotePath, "");
 			} catch (err) {
 				console.error("Failed to create daily note", err);
+				if (err instanceof Error && err.message.includes("already exists")) {
+					// If the file already exists, try to get it again
+					dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
+				} else {
+					this.plugin.showNotification("Failed to create daily note");
+					return null;
+				}
 			}
 		}
 
