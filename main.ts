@@ -688,7 +688,7 @@ class SorteeerSettingTab extends PluginSettingTab {
 			.addButton(button => button
 				.setButtonText('Select Folder')
 				.onClick(() => {
-					new FolderSuggestModal(this.app, this.plugin, null).open();
+					new FolderSuggestModal(this.app, this.plugin).open();
 				}));
 
 		new Setting(containerEl)
@@ -791,12 +791,10 @@ class SorteeerSettingTab extends PluginSettingTab {
 }
 class FolderSuggestModal extends SuggestModal<TFolder> {
 	plugin: SorteeerPlugin;
-	parentModal: SorteeerModal;
 
-	constructor(app: App, plugin: SorteeerPlugin, parentModal: SorteeerModal) {
+	constructor(app: App, plugin: SorteeerPlugin) {
 		super(app);
 		this.plugin = plugin;
-		this.parentModal = parentModal;
 	}
 
 	getSuggestions(query: string): TFolder[] {
@@ -811,7 +809,7 @@ class FolderSuggestModal extends SuggestModal<TFolder> {
 	onChooseSuggestion(folder: TFolder, evt: MouseEvent | KeyboardEvent) {
 		this.plugin.settings.moveAction = folder.path;
 		this.plugin.saveSettings();
-		this.parentModal.moveNote();
+		new Notice(`Move action folder set to: ${folder.path}`);
 	}
 }
 class StatsModal extends Modal {
