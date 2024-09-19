@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal } from 'obsidian';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -238,13 +238,12 @@ class MoreActionsModal extends Modal {
 
 	async addLink() {
 		if (this.parentModal.currentNote) {
-			const linkModal = new AddLinkModal(this.app, this.plugin, this.parentModal);
-			linkModal.open();
+			new AddLinkModal(this.app, this.plugin, this.parentModal).open();
 		}
 	}
 }
 
-class AddLinkModal extends Modal {
+class AddLinkModal extends SuggestModal<TFile> {
 	plugin: SorteeerPlugin;
 	parentModal: SorteeerModal;
 
@@ -254,25 +253,28 @@ class AddLinkModal extends Modal {
 		this.parentModal = parentModal;
 	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.empty();
-		contentEl.addClass('sorteeer-add-link');
+	getSuggestions(query: string): TFile[] {
+		return this.app.vault.getMarkdownFiles()
+			.filter(file => file.path.toLowerCase().includes(query.toLowerCase()));
+	}
 
-		const input = contentEl.createEl('input', {type: 'text', placeholder: 'Enter link text'});
-		const button = contentEl.createEl('button', {text: 'Add Link'});
+	renderSuggestion(file: TFile, el: HTMLElement) {
+		el.createEl("div", { text: file.path });
+	}
 
-		button.addEventListener('click', async () => {
-			const linkText = input.value;
-			if (linkText && this.parentModal.currentNote) {
-				let content = await this.app.vault.read(this.parentModal.currentNote);
-				const linkSection = `\n\n${this.plugin.settings.seeAlsoHeader}\n- [[${linkText}]]`;
-				content += linkSection;
-				await this.app.vault.modify(this.parentModal.currentNote, content);
-				this.parentModal.displayNote(this.parentModal.currentNote);
-				this.close();
-			}
-		});
+	onChooseSuggestion(file: TFile, evt: MouseEvent | KeyboardEvent) {
+		this.addLink(file.basename);
+	}
+
+	async addLink(linkText: string) {
+		if (linkText && this.parentModal.currentNote) {
+			let content = await this.app.vault.read(this.parentModal.currentNote);
+			const linkSection = `\n\n${this.plugin.settings.seeAlsoHeader}\n- [[${linkText}]]`;
+			content += linkSection;
+			await this.app.vault.modify(this.parentModal.currentNote, content);
+			this.parentModal.displayNote(this.parentModal.currentNote);
+			this.close();
+		}
 	}
 }
 
