@@ -264,9 +264,9 @@ class MoreActionsModal extends Modal {
 		this.plugin = plugin;
 		this.parentModal = parentModal;
 		this.actions = [
-			{text: 'Remove Tag', callback: () => this.removeTag()},
-			{text: 'Add Tag', callback: () => this.addTag()},
-			{text: 'Add Star', callback: () => this.addStar()},
+			{text: `Remove Tag (${this.plugin.settings.removeTagAction})`, callback: () => this.removeTag()},
+			{text: `Add Tag (${this.plugin.settings.addTagAction})`, callback: () => this.addTag()},
+			{text: `Add Star (${this.plugin.settings.addStarAction})`, callback: () => this.addStar()},
 			{text: 'Add Link', callback: () => this.addLink()}
 		];
 		this.selectedIndex = 0;

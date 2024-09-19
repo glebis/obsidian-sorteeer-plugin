@@ -93,6 +93,11 @@
     transition: background-color 0.3s ease;
 }
 
+.sorteeer-more-actions button .sorteeer-shortcut {
+    color: var(--text-on-accent);
+    opacity: 0.8;
+}
+
 .sorteeer-more-actions button:hover,
 .sorteeer-add-link button:hover,
 .sorteeer-more-actions button.selected {
