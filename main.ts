@@ -343,7 +343,6 @@ class SorteeerModal extends Modal {
 		}
 
 		this.currentNote = this.sortedNotes[this.currentIndex];
-		this.contentEl.empty(); // Clear the content before displaying the new note
 		await this.displayNote(this.currentNote);
 		this.currentIndex++;
 
@@ -405,7 +404,6 @@ class SorteeerModal extends Modal {
 		this.focusSkipButton();
 	}
 
-
 	displayEmptyFolderMessage(message: string) {
 		const {contentEl} = this;
 		contentEl.empty();
@@ -427,59 +425,6 @@ class SorteeerModal extends Modal {
 			type: 'plugin',
 			state: { id: 'sorteeer' }
 		});
-	}
-
-	async displayNote(note: TFile) {
-		const {contentEl} = this;
-		contentEl.empty();
-
-		// Increment the action stat for displaying a note
-		this.plugin.incrementActionStat('noteDisplayed');
-
-		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), 'Alt+Delete');
-		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
-		this.createActionButton(actionBar, `Move to _archive`, `Move note to _archive folder`, () => this.moveNote(), 'Alt+↓');
-		this.createActionButton(actionBar, 'Skip', 'Skip note', () => this.skipNote(), 'Alt+→');
-		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), 'Alt+↑').setAttribute('data-action', 'more');
-
-		const titleContainer = contentEl.createDiv('sorteeer-title-container');
-
-		const titleEl = titleContainer.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
-
-		const editLink = titleContainer.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
-		editLink.addEventListener('click', (e) => {
-			e.preventDefault();
-			if (note) {
-				this.app.workspace.openLinkText(note.path, '', true);
-			} else {
-				new Notice('Unable to open the file. Note not found.');
-			}
-		});
-		titleEl.setAttribute('contenteditable', 'true');
-		titleEl.addEventListener('dblclick', (e) => {
-			e.preventDefault();
-			titleEl.focus();
-		});
-		titleEl.addEventListener('blur', async () => {
-			const newTitle = titleEl.innerText.trim();
-			if (newTitle !== note.basename) {
-				const newPath = note.path.replace(note.basename, newTitle);
-				await this.app.fileManager.renameFile(note, newPath);
-				this.currentNote = this.app.vault.getAbstractFileByPath(newPath) as TFile;
-			}
-		});
-
-		const content = await this.app.vault.read(note);
-		const noteContent = contentEl.createDiv('note-content');
-		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
-
-		// Add event listener for keyboard shortcuts
-		contentEl.addEventListener('keydown', this.onKeyDown);
-
-		this.createFooter();
-
-		this.focusSkipButton();
 	}
 
 	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string): HTMLButtonElement {
