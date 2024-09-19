@@ -1010,6 +1010,12 @@ class FolderSuggestModal extends SuggestModal<TFolder> {
 	}
 
 	onChooseSuggestion(folder: TFolder, evt: MouseEvent | KeyboardEvent) {
+		this.plugin.settings.sortFolder = folder.path;
+		this.plugin.saveSettings();
 		this.onChoose(folder);
+		if (this.plugin.sorteeerModal) {
+			this.plugin.sorteeerModal.loadNextNote();
+		}
+		this.close();
 	}
 }
