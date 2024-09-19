@@ -7,7 +7,6 @@ interface SorteeerSettings {
 	moveAction: string;
 	removeTagAction: string;
 	addTagAction: string;
-	bookmarkAction: string;
 	addLinkAction: string;
 	seeAlsoHeader: string;
 	dailyNoteFormat: string;
@@ -581,7 +580,7 @@ class MoreActionsModal extends Modal {
 		this.actions = [
 			{text: `Remove Tag (${this.plugin.settings.removeTagAction})`, callback: () => this.removeTag()},
 			{text: `Add Tag (${this.plugin.settings.addTagAction})`, callback: () => this.addTag()},
-			{text: `Toggle Bookmark`, callback: () => this.addBookmark()},
+			// Bookmarking action removed
 			{text: 'Add Link', callback: () => this.addLink()},
 			{text: 'Add to Daily Note', callback: () => this.addToDailyNote()},
 			{text: 'Copy Link', callback: () => this.copyNoteLink()}
@@ -678,31 +677,7 @@ class MoreActionsModal extends Modal {
 		}
 	}
 
-	async addBookmark() {
-		if (this.parentModal.currentNote) {
-			const file = this.parentModal.currentNote;
-			
-			// Check if the file is already bookmarked
-			const isBookmarked = this.app.metadataCache.getFileCache(file)?.frontmatter?.tags?.includes('bookmark');
-			
-			if (isBookmarked) {
-				// Remove the bookmark tag
-				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-					frontmatter.tags = (frontmatter.tags || []).filter((tag: string) => tag !== 'bookmark');
-				});
-				this.plugin.showNotification('Bookmark removed');
-			} else {
-				// Add the bookmark tag
-				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-					frontmatter.tags = [...(frontmatter.tags || []), 'bookmark'];
-				});
-				this.plugin.showNotification('Bookmark added');
-			}
-			
-			this.plugin.incrementActionStat('toggleBookmark');
-			this.parentModal.displayNote(file);
-		}
-	}
+	// Bookmarking functionality has been disabled
 
 	async addLink() {
 		if (this.parentModal.currentNote) {
@@ -945,16 +920,7 @@ class SorteeerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName('Bookmark Action')
-			.setDesc('Toggle bookmark for the note')
-			.addText(text => text
-				.setPlaceholder('Bookmark')
-				.setValue(this.plugin.settings.bookmarkAction)
-				.onChange(async (value) => {
-					this.plugin.settings.bookmarkAction = value;
-					await this.plugin.saveSettings();
-				}));
+		// Bookmark Action setting removed
 
 		new Setting(containerEl)
 			.setName('See Also Header')
@@ -1044,7 +1010,7 @@ class StatsModal extends Modal {
 			'moveToFolder': 'Notes Moved',
 			'removeTag': 'Tags Removed',
 			'addTag': 'Tags Added',
-			'toggleBookmark': 'Bookmarks Toggled',
+			// 'toggleBookmark' stat removed
 			'addLink': 'Links Added',
 			'addToDailyNote': 'Added to Daily Notes'
 		};
