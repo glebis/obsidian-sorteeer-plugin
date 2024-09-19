@@ -98,10 +98,10 @@
 }
 
 .sorteeer-modal .action-bar button[data-action="more"]::after {
-    content: "\25BC";
+    content: "\25B6";
     font-size: 0.8em;
     position: absolute;
-    top: 20%;
+    top: 50%;
     right: 10px;
     transform: translateY(-50%);
 }
