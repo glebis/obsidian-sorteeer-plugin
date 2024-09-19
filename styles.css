@@ -143,11 +143,19 @@
     text-align: left;
 }
 
+.sorteeer-more-actions button {
+    position: relative;
+}
+
 .sorteeer-more-actions button .sorteeer-shortcut {
-    color: var(--text-faint);
-    opacity: 0.8;
-    font-size: 0.8em;
-    margin-left: 10px;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-on-accent);
+    opacity: 1;
+    font-size: 1.2em;
+    font-weight: bold;
 }
 
 .sorteeer-more-actions button:hover,
