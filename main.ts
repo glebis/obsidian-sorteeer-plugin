@@ -156,6 +156,17 @@ class SorteeerModal extends Modal {
 		contentEl.removeEventListener('keydown', this.onKeyDown);
 	}
 
+	private getNotesReviewedToday(): number {
+		const today = new Date().toDateString();
+		let count = 0;
+		for (const [action, actionCount] of Object.entries(this.plugin.actionStats)) {
+			if (action.startsWith(today)) {
+				count += actionCount;
+			}
+		}
+		return count;
+	}
+
 	async loadNextNote() {
 		const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.sortFolder) as TFolder;
 		if (!folder) {
@@ -209,7 +220,11 @@ class SorteeerModal extends Modal {
 		this.createActionButton(actionBar, 'Copy Link', 'Copy note link', () => this.copyNoteLink(note), '4');
 		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), '5');
 
-		const editLink = contentEl.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
+		const titleContainer = contentEl.createDiv('sorteeer-title-container');
+
+		const titleEl = titleContainer.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
+
+		const editLink = titleContainer.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
 			e.preventDefault();
 			const activeLeaf = this.app.workspace.activeLeaf;
@@ -220,8 +235,6 @@ class SorteeerModal extends Modal {
 				new Notice('Unable to open the file. No active leaf found.');
 			}
 		});
-
-		const titleEl = contentEl.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
 		titleEl.setAttribute('contenteditable', 'true');
 		titleEl.addEventListener('dblclick', (e) => {
 			e.preventDefault();
