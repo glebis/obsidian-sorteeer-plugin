@@ -414,7 +414,7 @@ class SorteeerModal extends Modal {
 		this.focusSkipButton();
 	}
 
-	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string) {
+	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string): HTMLButtonElement {
 		const button = container.createEl('button', {text: text});
 		button.title = tooltip;
 		button.addEventListener('click', callback);
@@ -422,6 +422,7 @@ class SorteeerModal extends Modal {
 			const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
 			shortcutEl.setText(shortcut);
 		}
+		return button;
 	}
 
 	async deleteNote() {
