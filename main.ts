@@ -569,28 +569,7 @@ class MoreActionsModal extends Modal {
 	}
 
 	async addToDailyNote() {
-		if (this.parentModal.currentNote) {
-			const dailyNote = await this.getDailyNote();
-			if (dailyNote) {
-				let content = await this.app.vault.read(dailyNote);
-				const linkToAdd = `[[${this.parentModal.currentNote.basename}]]`;
-				const sectionToAdd = this.plugin.settings.dailyNoteSection;
-				
-				if (content.includes(sectionToAdd)) {
-					const parts = content.split(sectionToAdd);
-					parts[1] = `\n- ${linkToAdd}${parts[1]}`;
-					content = parts.join(sectionToAdd);
-				} else {
-					content += `\n\n${sectionToAdd}\n- ${linkToAdd}`;
-				}
-
-				await this.app.vault.modify(dailyNote, content);
-				this.plugin.incrementActionStat('addToDailyNote');
-				this.plugin.showNotification(`Added link to daily note: ${dailyNote.basename}`);
-			} else {
-				this.plugin.showNotification("Failed to find or create daily note");
-			}
-		}
+		await this.plugin.addToDailyNote(this.parentModal.currentNote);
 	}
 }
 
