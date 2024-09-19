@@ -888,29 +888,6 @@ class SorteeerSettingTab extends PluginSettingTab {
 				}));
 	}
 }
-class FolderSuggestModal extends SuggestModal<TFolder> {
-	plugin: SorteeerPlugin;
-
-	constructor(app: App, plugin: SorteeerPlugin) {
-		super(app);
-		this.plugin = plugin;
-	}
-
-	getSuggestions(query: string): TFolder[] {
-		return this.app.vault.getAllLoadedFiles()
-			.filter(file => file instanceof TFolder && file.path.toLowerCase().includes(query.toLowerCase())) as TFolder[];
-	}
-
-	renderSuggestion(folder: TFolder, el: HTMLElement) {
-		el.createEl("div", { text: folder.path });
-	}
-
-	onChooseSuggestion(folder: TFolder, evt: MouseEvent | KeyboardEvent) {
-		this.plugin.settings.moveAction = folder.path;
-		this.plugin.saveSettings();
-		new Notice(`Move action folder set to: ${folder.path}`);
-	}
-}
 class StatsModal extends Modal {
 	plugin: SorteeerPlugin;
 
