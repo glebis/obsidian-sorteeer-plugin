@@ -1,8 +1,69 @@
-/*
+/* Sorteeer Plugin Styles */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.sorteeer-modal {
+    font-family: monospace;
+    line-height: 150%;
+    color: var(--text-muted);
+    padding: 20px;
+}
 
-If your plugin does not need CSS, delete this file.
+.sorteeer-modal .note-content {
+    max-height: 70vh;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+}
 
-*/
+.sorteeer-modal .action-bar {
+    display: flex;
+    justify-content: space-around;
+}
+
+.sorteeer-modal .action-bar button {
+    font-size: 24px;
+    padding: 10px 20px;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.sorteeer-modal .action-bar button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.sorteeer-more-actions,
+.sorteeer-add-link {
+    padding: 20px;
+}
+
+.sorteeer-more-actions button,
+.sorteeer-add-link button {
+    display: block;
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.sorteeer-more-actions button:hover,
+.sorteeer-add-link button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.sorteeer-add-link input {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 5px;
+}

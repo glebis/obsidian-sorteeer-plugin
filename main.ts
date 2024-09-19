@@ -1,85 +1,55 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder } from 'obsidian';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
-	mySetting: string;
+interface SorteeerSettings {
+	sortFolder: string;
+	sortOrder: 'random' | 'oldest' | 'newest';
+	deleteAction: string;
+	moveAction: string;
+	removeTagAction: string;
+	addTagAction: string;
+	addStarAction: string;
+	addLinkAction: string;
+	seeAlsoHeader: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+const DEFAULT_SETTINGS: SorteeerSettings = {
+	sortFolder: '/',
+	sortOrder: 'random',
+	deleteAction: 'trash',
+	moveAction: 'Archive',
+	removeTagAction: '#stub',
+	addTagAction: '#reviewed',
+	addStarAction: '⭐',
+	addLinkAction: '',
+	seeAlsoHeader: 'See also'
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class SorteeerPlugin extends Plugin {
+	settings: SorteeerSettings;
+	sorteeerModal: SorteeerModal;
 
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
+		this.addRibbonIcon('sort', 'Sorteeer', () => {
+			this.openSorteeerModal();
 		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
+			id: 'open-sorteeer',
+			name: 'Open Sorteeer',
 			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
+				this.openSorteeerModal();
 			}
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		this.addSettingTab(new SorteeerSettingTab(this.app, this));
 	}
 
 	onunload() {
-
+		if (this.sorteeerModal) {
+			this.sorteeerModal.close();
+		}
 	}
 
 	async loadSettings() {
@@ -89,45 +59,308 @@ export default class MyPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+
+	openSorteeerModal() {
+		if (this.sorteeerModal) {
+			this.sorteeerModal.close();
+		}
+		this.sorteeerModal = new SorteeerModal(this.app, this);
+		this.sorteeerModal.open();
+	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
+class SorteeerModal extends Modal {
+	plugin: SorteeerPlugin;
+	currentNote: TFile | null;
+
+	constructor(app: App, plugin: SorteeerPlugin) {
 		super(app);
+		this.plugin = plugin;
 	}
 
 	onOpen() {
 		const {contentEl} = this;
-		contentEl.setText('Woah!');
+		contentEl.empty();
+		contentEl.addClass('sorteeer-modal');
+		this.loadNextNote();
 	}
 
 	onClose() {
 		const {contentEl} = this;
 		contentEl.empty();
 	}
+
+	async loadNextNote() {
+		const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.sortFolder) as TFolder;
+		if (!folder) {
+			new Notice('Sorteeer: Invalid folder path');
+			return;
+		}
+
+		const notes = folder.children.filter(file => file instanceof TFile && file.extension === 'md') as TFile[];
+		
+		if (notes.length === 0) {
+			new Notice('Sorteeer: No notes found in the specified folder');
+			return;
+		}
+
+		let note: TFile;
+		switch (this.plugin.settings.sortOrder) {
+			case 'random':
+				note = notes[Math.floor(Math.random() * notes.length)];
+				break;
+			case 'oldest':
+				note = notes.sort((a, b) => a.stat.ctime - b.stat.ctime)[0];
+				break;
+			case 'newest':
+				note = notes.sort((a, b) => b.stat.ctime - a.stat.ctime)[0];
+				break;
+		}
+
+		this.currentNote = note;
+		this.displayNote(note);
+	}
+
+	async displayNote(note: TFile) {
+		const {contentEl} = this;
+		contentEl.empty();
+
+		const content = await this.app.vault.read(note);
+		const noteContent = contentEl.createDiv('note-content');
+		noteContent.innerHTML = content;
+
+		const actionBar = contentEl.createDiv('action-bar');
+		this.createActionButton(actionBar, '←', this.plugin.settings.deleteAction, () => this.deleteNote());
+		this.createActionButton(actionBar, '↓', this.plugin.settings.moveAction, () => this.moveNote());
+		this.createActionButton(actionBar, '↑', 'More Actions', () => this.showMoreActions());
+	}
+
+	createActionButton(container: HTMLElement, icon: string, tooltip: string, callback: () => void) {
+		const button = container.createEl('button', {text: icon});
+		button.title = tooltip;
+		button.addEventListener('click', callback);
+	}
+
+	async deleteNote() {
+		if (this.currentNote) {
+			await this.app.vault.trash(this.currentNote, true);
+			this.loadNextNote();
+		}
+	}
+
+	async moveNote() {
+		if (this.currentNote) {
+			const targetFolder = this.app.vault.getAbstractFileByPath(this.plugin.settings.moveAction) as TFolder;
+			if (targetFolder) {
+				await this.app.fileManager.renameFile(this.currentNote, `${targetFolder.path}/${this.currentNote.name}`);
+				this.loadNextNote();
+			} else {
+				new Notice('Sorteeer: Invalid move folder');
+			}
+		}
+	}
+
+	showMoreActions() {
+		const modal = new MoreActionsModal(this.app, this.plugin, this);
+		modal.open();
+	}
 }
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
+class MoreActionsModal extends Modal {
+	plugin: SorteeerPlugin;
+	parentModal: SorteeerModal;
 
-	constructor(app: App, plugin: MyPlugin) {
+	constructor(app: App, plugin: SorteeerPlugin, parentModal: SorteeerModal) {
+		super(app);
+		this.plugin = plugin;
+		this.parentModal = parentModal;
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+		contentEl.empty();
+		contentEl.addClass('sorteeer-more-actions');
+
+		this.createActionButton('Remove Tag', () => this.removeTag());
+		this.createActionButton('Add Tag', () => this.addTag());
+		this.createActionButton('Add Star', () => this.addStar());
+		this.createActionButton('Add Link', () => this.addLink());
+	}
+
+	createActionButton(text: string, callback: () => void) {
+		const button = this.contentEl.createEl('button', {text: text});
+		button.addEventListener('click', () => {
+			callback();
+			this.close();
+		});
+	}
+
+	async removeTag() {
+		if (this.parentModal.currentNote) {
+			let content = await this.app.vault.read(this.parentModal.currentNote);
+			content = content.replace(new RegExp(this.plugin.settings.removeTagAction, 'g'), '');
+			await this.app.vault.modify(this.parentModal.currentNote, content);
+			this.parentModal.displayNote(this.parentModal.currentNote);
+		}
+	}
+
+	async addTag() {
+		if (this.parentModal.currentNote) {
+			let content = await this.app.vault.read(this.parentModal.currentNote);
+			content += `\n${this.plugin.settings.addTagAction}`;
+			await this.app.vault.modify(this.parentModal.currentNote, content);
+			this.parentModal.displayNote(this.parentModal.currentNote);
+		}
+	}
+
+	async addStar() {
+		if (this.parentModal.currentNote) {
+			let content = await this.app.vault.read(this.parentModal.currentNote);
+			content = `${this.plugin.settings.addStarAction} ${content}`;
+			await this.app.vault.modify(this.parentModal.currentNote, content);
+			this.parentModal.displayNote(this.parentModal.currentNote);
+		}
+	}
+
+	async addLink() {
+		if (this.parentModal.currentNote) {
+			const linkModal = new AddLinkModal(this.app, this.plugin, this.parentModal);
+			linkModal.open();
+		}
+	}
+}
+
+class AddLinkModal extends Modal {
+	plugin: SorteeerPlugin;
+	parentModal: SorteeerModal;
+
+	constructor(app: App, plugin: SorteeerPlugin, parentModal: SorteeerModal) {
+		super(app);
+		this.plugin = plugin;
+		this.parentModal = parentModal;
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+		contentEl.empty();
+		contentEl.addClass('sorteeer-add-link');
+
+		const input = contentEl.createEl('input', {type: 'text', placeholder: 'Enter link text'});
+		const button = contentEl.createEl('button', {text: 'Add Link'});
+
+		button.addEventListener('click', async () => {
+			const linkText = input.value;
+			if (linkText && this.parentModal.currentNote) {
+				let content = await this.app.vault.read(this.parentModal.currentNote);
+				const linkSection = `\n\n${this.plugin.settings.seeAlsoHeader}\n- [[${linkText}]]`;
+				content += linkSection;
+				await this.app.vault.modify(this.parentModal.currentNote, content);
+				this.parentModal.displayNote(this.parentModal.currentNote);
+				this.close();
+			}
+		});
+	}
+}
+
+class SorteeerSettingTab extends PluginSettingTab {
+	plugin: SorteeerPlugin;
+
+	constructor(app: App, plugin: SorteeerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
 	display(): void {
 		const {containerEl} = this;
-
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
+			.setName('Sort Folder')
+			.setDesc('Folder to sort through')
 			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
+				.setPlaceholder('Enter folder path')
+				.setValue(this.plugin.settings.sortFolder)
 				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
+					this.plugin.settings.sortFolder = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Sort Order')
+			.setDesc('How to order the notes')
+			.addDropdown(dropdown => dropdown
+				.addOption('random', 'Random')
+				.addOption('oldest', 'Oldest First')
+				.addOption('newest', 'Newest First')
+				.setValue(this.plugin.settings.sortOrder)
+				.onChange(async (value: 'random' | 'oldest' | 'newest') => {
+					this.plugin.settings.sortOrder = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Delete Action')
+			.setDesc('Action for left swipe or left arrow')
+			.addText(text => text
+				.setPlaceholder('Enter delete action')
+				.setValue(this.plugin.settings.deleteAction)
+				.onChange(async (value) => {
+					this.plugin.settings.deleteAction = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Move Action')
+			.setDesc('Folder to move notes to on down swipe or down arrow')
+			.addText(text => text
+				.setPlaceholder('Enter folder path')
+				.setValue(this.plugin.settings.moveAction)
+				.onChange(async (value) => {
+					this.plugin.settings.moveAction = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Remove Tag Action')
+			.setDesc('Tag to remove')
+			.addText(text => text
+				.setPlaceholder('Enter tag to remove')
+				.setValue(this.plugin.settings.removeTagAction)
+				.onChange(async (value) => {
+					this.plugin.settings.removeTagAction = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Add Tag Action')
+			.setDesc('Tag to add')
+			.addText(text => text
+				.setPlaceholder('Enter tag to add')
+				.setValue(this.plugin.settings.addTagAction)
+				.onChange(async (value) => {
+					this.plugin.settings.addTagAction = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Add Star Action')
+			.setDesc('Star symbol to add')
+			.addText(text => text
+				.setPlaceholder('Enter star symbol')
+				.setValue(this.plugin.settings.addStarAction)
+				.onChange(async (value) => {
+					this.plugin.settings.addStarAction = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('See Also Header')
+			.setDesc('Header for the link section')
+			.addText(text => text
+				.setPlaceholder('Enter header text')
+				.setValue(this.plugin.settings.seeAlsoHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.seeAlsoHeader = value;
 					await this.plugin.saveSettings();
 				}));
 	}
