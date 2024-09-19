@@ -312,6 +312,8 @@ class SorteeerModal extends Modal {
 
 		const titleEl = titleContainer.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
 
+		this.focusSkipButton();
+
 		const editLink = titleContainer.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
 			e.preventDefault();
@@ -413,6 +415,13 @@ class SorteeerModal extends Modal {
 					break;
 			}
 			event.preventDefault();
+		}
+	}
+
+	focusSkipButton() {
+		const skipButton = this.contentEl.querySelector('button:nth-child(3)') as HTMLButtonElement;
+		if (skipButton) {
+			skipButton.focus();
 		}
 	}
 }
