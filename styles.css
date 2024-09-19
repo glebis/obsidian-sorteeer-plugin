@@ -73,13 +73,13 @@
 
 .sorteeer-modal .action-bar {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     margin-bottom: 20px;
 }
 
 .sorteeer-modal .action-bar button {
     font-size: 14px;
-    padding: 8px 12px;
+    padding: 8px 10px;
     background-color: var(--interactive-accent);
     color: var(--text-on-accent);
     border: none;
@@ -91,7 +91,7 @@
     align-items: center;
     justify-content: space-between;
     height: 50px;
-    width: 120px;
+    width: calc(25% - 7.5px); /* 10px margin between buttons */
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
