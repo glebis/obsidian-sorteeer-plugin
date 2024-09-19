@@ -380,7 +380,7 @@ class MoreActionsModal extends Modal {
 
 	async addToDailyNote() {
 		if (this.parentModal.currentNote) {
-			const dailyNote = this.getDailyNote();
+			const dailyNote = await this.getDailyNote();
 			if (dailyNote) {
 				let content = await this.app.vault.read(dailyNote);
 				const linkToAdd = `[[${this.parentModal.currentNote.basename}]]`;
@@ -402,7 +402,7 @@ class MoreActionsModal extends Modal {
 		}
 	}
 
-	getDailyNote(): TFile | null {
+	async getDailyNote(): Promise<TFile | null> {
 		const { moment } = window;
 		const dateString = moment().format(this.plugin.settings.dailyNoteFormat);
 		const dailyNotePath = `${this.plugin.settings.dailyNoteFolder}/${dateString}.md`;
@@ -410,7 +410,7 @@ class MoreActionsModal extends Modal {
 
 		if (!dailyNote) {
 			try {
-				dailyNote = this.app.vault.create(dailyNotePath, "");
+				dailyNote = await this.app.vault.create(dailyNotePath, "");
 			} catch (err) {
 				console.error("Failed to create daily note", err);
 				return null;
