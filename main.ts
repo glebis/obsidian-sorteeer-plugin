@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile, TextInputSuggest } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile } from 'obsidian';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -16,30 +16,41 @@ interface SorteeerSettings {
 	showNotifications: boolean;
 }
 
-class FolderSuggest extends TextInputSuggest<TFolder> {
-	getSuggestions(inputStr: string): TFolder[] {
-		const abstractFiles = this.app.vault.getAllLoadedFiles();
-		const folders: TFolder[] = [];
-		const lowerCaseInputStr = inputStr.toLowerCase();
+class FolderSuggest {
+    app: App;
+    inputEl: HTMLInputElement;
 
-		abstractFiles.forEach((folder: TAbstractFile) => {
-			if (folder instanceof TFolder && folder.path.toLowerCase().contains(lowerCaseInputStr)) {
-				folders.push(folder);
-			}
-		});
+    constructor(app: App, inputEl: HTMLInputElement) {
+        this.app = app;
+        this.inputEl = inputEl;
+    }
 
-		return folders;
-	}
+    getSuggestions(inputStr: string): TFolder[] {
+        const abstractFiles = this.app.vault.getAllLoadedFiles();
+        const folders: TFolder[] = [];
+        const lowerCaseInputStr = inputStr.toLowerCase();
 
-	renderSuggestion(file: TFolder, el: HTMLElement): void {
-		el.setText(file.path);
-	}
+        abstractFiles.forEach((folder: TAbstractFile) => {
+            if (folder instanceof TFolder && folder.path.toLowerCase().includes(lowerCaseInputStr)) {
+                folders.push(folder);
+            }
+        });
 
-	selectSuggestion(file: TFolder): void {
-		this.inputEl.value = file.path;
-		this.inputEl.trigger("input");
-		this.close();
-	}
+        return folders;
+    }
+
+    renderSuggestion(file: TFolder, el: HTMLElement): void {
+        el.setText(file.path);
+    }
+
+    selectSuggestion(file: TFolder): void {
+        this.inputEl.value = file.path;
+        this.inputEl.dispatchEvent(new Event('input'));
+    }
+
+    close(): void {
+        // Implementieren Sie hier die Logik zum Schließen des Suggest-Fensters
+    }
 }
 
 const DEFAULT_SETTINGS: SorteeerSettings = {
