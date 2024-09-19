@@ -634,28 +634,44 @@ class MoreActionsModal extends Modal {
 
 	async addToDailyNote() {
 		if (this.parentModal.currentNote) {
+			console.log("Adding note to daily note");
 			const dailyNote = await this.getDailyNote();
 			if (dailyNote) {
-				let content = await this.app.vault.read(dailyNote);
-				const linkToAdd = `[[${this.parentModal.currentNote.basename}]]`;
-				const sectionToAdd = this.plugin.settings.dailyNoteSection;
-				
-				if (content.includes(sectionToAdd)) {
-					const parts = content.split(sectionToAdd);
-					parts[1] = `\n- ${linkToAdd}${parts[1]}`;
-					content = parts.join(sectionToAdd);
-				} else {
-					content += `\n\n${sectionToAdd}\n- ${linkToAdd}`;
-				}
+				try {
+					let content = await this.app.vault.read(dailyNote);
+					const linkToAdd = `[[${this.parentModal.currentNote.basename}]]`;
+					const sectionToAdd = this.plugin.settings.dailyNoteSection;
+					
+					console.log(`Current daily note content length: ${content.length}`);
+					console.log(`Adding link: ${linkToAdd}`);
+					
+					if (content.includes(sectionToAdd)) {
+						console.log("Section already exists, appending link");
+						const parts = content.split(sectionToAdd);
+						parts[1] = `\n- ${linkToAdd}${parts[1]}`;
+						content = parts.join(sectionToAdd);
+					} else {
+						console.log("Section doesn't exist, creating new section");
+						content += `\n\n${sectionToAdd}\n- ${linkToAdd}`;
+					}
 
-				await this.app.vault.modify(dailyNote, content);
-				this.plugin.incrementActionStat('addToDailyNote');
-				this.plugin.showNotification(`Added link to daily note: ${dailyNote.basename}`);
-				this.close();
-				this.parentModal.loadNextNote();
+					await this.app.vault.modify(dailyNote, content);
+					console.log("Successfully modified daily note");
+					this.plugin.incrementActionStat('addToDailyNote');
+					this.plugin.showNotification(`Added link to daily note: ${dailyNote.basename}`);
+					this.close();
+					this.parentModal.loadNextNote();
+				} catch (err) {
+					console.error("Error while modifying daily note:", err);
+					this.plugin.showNotification("Failed to modify daily note");
+				}
 			} else {
+				console.error("Failed to find or create daily note");
 				this.plugin.showNotification("Failed to find or create daily note");
 			}
+		} else {
+			console.error("No current note selected");
+			this.plugin.showNotification("No note selected to add to daily note");
 		}
 	}
 
@@ -665,19 +681,29 @@ class MoreActionsModal extends Modal {
 		const dailyNotePath = `${this.plugin.settings.dailyNoteFolder}/${dateString}.md`;
 		let dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
 
+		console.log(`Attempting to get or create daily note: ${dailyNotePath}`);
+
 		if (!dailyNote) {
+			console.log("Daily note doesn't exist, creating new file");
 			try {
 				dailyNote = await this.app.vault.create(dailyNotePath, "");
+				console.log("Daily note created successfully");
 			} catch (err) {
-				console.error("Failed to create daily note", err);
-				// If the file already exists, try to get it again
-				dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
+				console.error("Error while creating daily note:", err);
+				if (err.message.includes("already exists")) {
+					console.log("File already exists, attempting to retrieve it");
+					dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
+				}
 			}
+		} else {
+			console.log("Daily note already exists");
 		}
 
 		if (dailyNote instanceof TFile) {
+			console.log("Successfully retrieved daily note");
 			return dailyNote;
 		} else {
+			console.error("Failed to find or create daily note");
 			this.plugin.showNotification("Failed to find or create daily note");
 			return null;
 		}
