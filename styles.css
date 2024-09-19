@@ -5,6 +5,8 @@
     line-height: 150%;
     color: var(--text-muted);
     padding: 20px;
+    width: 80vw;
+    max-width: 800px;
 }
 
 .sorteeer-modal .sorteeer-note-title {

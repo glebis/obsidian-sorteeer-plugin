@@ -145,26 +145,23 @@ class SorteeerModal extends Modal {
 		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
 
 		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote(), '←', 1);
+		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote(), '←');
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
-		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move to ${moveFolder}`, () => this.moveNote(), '↓', 2);
-		this.createActionButton(actionBar, 'Skip', 'Skip to next note', () => this.skipNote(), '→', 3);
-		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions(), '↑', 4);
+		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move to ${moveFolder}`, () => this.moveNote(), '↓');
+		this.createActionButton(actionBar, 'Skip', 'Skip to next note', () => this.skipNote(), '→');
+		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions(), '↑');
 
 		// Add event listener for keyboard shortcuts
 		contentEl.addEventListener('keydown', this.onKeyDown);
 	}
 
-	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string, altNumber?: number) {
+	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string) {
 		const button = container.createEl('button', {text: text});
 		button.title = tooltip;
 		button.addEventListener('click', callback);
-		if (shortcut || altNumber) {
+		if (shortcut) {
 			const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
-			let shortcutText = '';
-			if (shortcut) shortcutText += `Alt+${shortcut}`;
-			if (altNumber) shortcutText += (shortcutText ? ' or ' : '') + `Alt+${altNumber}`;
-			shortcutEl.setText(shortcutText);
+			shortcutEl.setText(`Alt+${shortcut}`);
 		}
 	}
 
@@ -182,7 +179,7 @@ class SorteeerModal extends Modal {
 				await this.app.fileManager.renameFile(this.currentNote, `${targetFolder.path}/${this.currentNote.name}`);
 				this.loadNextNote();
 			} else {
-				new Notice('Sorteeer: Invalid move folder');
+				new FolderSuggestModal(this.app, this.plugin, this).open();
 			}
 		}
 	}
@@ -495,5 +492,30 @@ class SorteeerSettingTab extends PluginSettingTab {
 					this.plugin.settings.seeAlsoHeader = value;
 					await this.plugin.saveSettings();
 				}));
+	}
+}
+class FolderSuggestModal extends SuggestModal<TFolder> {
+	plugin: SorteeerPlugin;
+	parentModal: SorteeerModal;
+
+	constructor(app: App, plugin: SorteeerPlugin, parentModal: SorteeerModal) {
+		super(app);
+		this.plugin = plugin;
+		this.parentModal = parentModal;
+	}
+
+	getSuggestions(query: string): TFolder[] {
+		return this.app.vault.getAllLoadedFiles()
+			.filter(file => file instanceof TFolder && file.path.toLowerCase().includes(query.toLowerCase())) as TFolder[];
+	}
+
+	renderSuggestion(folder: TFolder, el: HTMLElement) {
+		el.createEl("div", { text: folder.path });
+	}
+
+	onChooseSuggestion(folder: TFolder, evt: MouseEvent | KeyboardEvent) {
+		this.plugin.settings.moveAction = folder.path;
+		this.plugin.saveSettings();
+		this.parentModal.moveNote();
 	}
 }
