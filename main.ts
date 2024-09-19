@@ -336,7 +336,7 @@ class SorteeerModal extends Modal {
 		settingsLink.addEventListener('click', (e) => {
 			e.preventDefault();
 			this.close();
-			this.app.setting.openTab('sorteeer');
+			this.plugin.openSettingsTab();
 		});
 		
 		contentEl.createEl('p', {text: 'or'});
@@ -349,6 +349,10 @@ class SorteeerModal extends Modal {
 				this.loadNextNote();
 			}).open();
 		});
+	}
+
+	openSettingsTab() {
+		this.app.setting.openTabById('sorteeer');
 	}
 
 	async displayNote(note: TFile) {
