@@ -85,7 +85,10 @@ export default class SorteeerPlugin extends Plugin {
 	deletedNotes: DeletedNote[] = [];
 
 	openSettingsTab() {
-		this.app.setting.openTabById('sorteeer');
+		this.app.workspace.getLeaf().setViewState({
+			type: 'plugin',
+			state: { id: 'sorteeer' }
+		});
 	}
 
 	async onload() {
@@ -356,7 +359,10 @@ class SorteeerModal extends Modal {
 	}
 
 	openSettingsTab() {
-		this.app.setting.openTabById('sorteeer');
+		this.app.workspace.getLeaf().setViewState({
+			type: 'plugin',
+			state: { id: 'sorteeer' }
+		});
 	}
 
 	async displayNote(note: TFile) {
