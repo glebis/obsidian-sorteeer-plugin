@@ -487,11 +487,15 @@ class MoreActionsModal extends Modal {
 				dailyNote = await this.app.vault.create(dailyNotePath, "");
 			} catch (err) {
 				console.error("Failed to create daily note", err);
-				return null;
 			}
 		}
 
-		return dailyNote instanceof TFile ? dailyNote : null;
+		if (dailyNote instanceof TFile) {
+			return dailyNote;
+		} else {
+			this.plugin.showNotification("Failed to find or create daily note");
+			return null;
+		}
 	}
 }
 
