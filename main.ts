@@ -361,6 +361,11 @@ class SorteeerModal extends Modal {
 		}
 	}
 
+	resetNotes() {
+		this.sortedNotes = [];
+		this.currentIndex = 0;
+	}
+
 	async displayNote(note: TFile) {
 		const {contentEl} = this;
 		contentEl.empty();
@@ -851,7 +856,7 @@ class SorteeerSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.sortFolder = value;
 						await this.plugin.saveSettings();
-						this.plugin.sorteeerModal?.loadNextNote();
+						this.plugin.handleFolderChange();
 					});
 			});
 
