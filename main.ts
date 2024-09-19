@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile, TextInputSuggest } from 'obsidian';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -14,6 +14,32 @@ interface SorteeerSettings {
 	dailyNoteFolder: string;
 	dailyNoteSection: string;
 	showNotifications: boolean;
+}
+
+class FolderSuggest extends TextInputSuggest<TFolder> {
+	getSuggestions(inputStr: string): TFolder[] {
+		const abstractFiles = this.app.vault.getAllLoadedFiles();
+		const folders: TFolder[] = [];
+		const lowerCaseInputStr = inputStr.toLowerCase();
+
+		abstractFiles.forEach((folder: TAbstractFile) => {
+			if (folder instanceof TFolder && folder.path.toLowerCase().contains(lowerCaseInputStr)) {
+				folders.push(folder);
+			}
+		});
+
+		return folders;
+	}
+
+	renderSuggestion(file: TFolder, el: HTMLElement): void {
+		el.setText(file.path);
+	}
+
+	selectSuggestion(file: TFolder): void {
+		this.inputEl.value = file.path;
+		this.inputEl.trigger("input");
+		this.close();
+	}
 }
 
 const DEFAULT_SETTINGS: SorteeerSettings = {
@@ -653,13 +679,15 @@ class SorteeerSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName('Sort Folder')
 			.setDesc('Folder to sort through')
-			.addText(text => text
-				.setPlaceholder('Enter folder path')
-				.setValue(this.plugin.settings.sortFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.sortFolder = value;
-					await this.plugin.saveSettings();
-				}));
+			.addSearch(cb => {
+				new FolderSuggest(this.app, cb.inputEl);
+				cb.setPlaceholder('Enter folder path')
+					.setValue(this.plugin.settings.sortFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.sortFolder = value;
+						await this.plugin.saveSettings();
+					});
+			});
 
 		new Setting(containerEl)
 			.setName('Sort Order')
