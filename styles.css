@@ -73,7 +73,8 @@
 }
 
 .sorteeer-more-actions button:hover,
-.sorteeer-add-link button:hover {
+.sorteeer-add-link button:hover,
+.sorteeer-more-actions button.selected {
     background-color: var(--interactive-accent-hover);
 }
 

@@ -145,23 +145,26 @@ class SorteeerModal extends Modal {
 		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
 
 		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote(), '←');
+		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote(), '←', 1);
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
-		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move to ${moveFolder}`, () => this.moveNote(), '↓');
-		this.createActionButton(actionBar, 'Skip', 'Skip to next note', () => this.skipNote(), '→');
-		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions(), '↑');
+		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move to ${moveFolder}`, () => this.moveNote(), '↓', 2);
+		this.createActionButton(actionBar, 'Skip', 'Skip to next note', () => this.skipNote(), '→', 3);
+		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions(), '↑', 4);
 
 		// Add event listener for keyboard shortcuts
 		contentEl.addEventListener('keydown', this.onKeyDown);
 	}
 
-	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string) {
+	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string, altNumber?: number) {
 		const button = container.createEl('button', {text: text});
 		button.title = tooltip;
 		button.addEventListener('click', callback);
-		if (shortcut) {
+		if (shortcut || altNumber) {
 			const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
-			shortcutEl.setText(shortcut);
+			let shortcutText = '';
+			if (shortcut) shortcutText += `Alt+${shortcut}`;
+			if (altNumber) shortcutText += (shortcutText ? ' or ' : '') + `Alt+${altNumber}`;
+			shortcutEl.setText(shortcutText);
 		}
 	}
 
@@ -194,17 +197,43 @@ class SorteeerModal extends Modal {
 	}
 
 	onKeyDown = (event: KeyboardEvent) => {
-		switch(event.key) {
-			case 'ArrowLeft':
+		if (event.altKey) {
+			switch(event.key) {
+				case 'ArrowLeft':
+					this.deleteNote();
+					break;
+				case 'ArrowDown':
+					this.moveNote();
+					break;
+				case 'ArrowRight':
+					this.skipNote();
+					break;
+				case 'ArrowUp':
+					this.showMoreActions();
+					break;
+				case '1':
+				case '2':
+				case '3':
+				case '4':
+					this.handleNumberShortcut(parseInt(event.key));
+					break;
+			}
+			event.preventDefault();
+		}
+	}
+
+	handleNumberShortcut(num: number) {
+		switch(num) {
+			case 1:
 				this.deleteNote();
 				break;
-			case 'ArrowDown':
+			case 2:
 				this.moveNote();
 				break;
-			case 'ArrowRight':
+			case 3:
 				this.skipNote();
 				break;
-			case 'ArrowUp':
+			case 4:
 				this.showMoreActions();
 				break;
 		}
@@ -214,11 +243,20 @@ class SorteeerModal extends Modal {
 class MoreActionsModal extends Modal {
 	plugin: SorteeerPlugin;
 	parentModal: SorteeerModal;
+	actions: {text: string, callback: () => void}[];
+	selectedIndex: number;
 
 	constructor(app: App, plugin: SorteeerPlugin, parentModal: SorteeerModal) {
 		super(app);
 		this.plugin = plugin;
 		this.parentModal = parentModal;
+		this.actions = [
+			{text: 'Remove Tag', callback: () => this.removeTag()},
+			{text: 'Add Tag', callback: () => this.addTag()},
+			{text: 'Add Star', callback: () => this.addStar()},
+			{text: 'Add Link', callback: () => this.addLink()}
+		];
+		this.selectedIndex = 0;
 	}
 
 	onOpen() {
@@ -226,18 +264,65 @@ class MoreActionsModal extends Modal {
 		contentEl.empty();
 		contentEl.addClass('sorteeer-more-actions');
 
-		this.createActionButton('Remove Tag', () => this.removeTag());
-		this.createActionButton('Add Tag', () => this.addTag());
-		this.createActionButton('Add Star', () => this.addStar());
-		this.createActionButton('Add Link', () => this.addLink());
+		this.actions.forEach((action, index) => {
+			this.createActionButton(action.text, () => this.executeAction(index), index + 1);
+		});
+
+		this.updateSelectedButton();
+
+		contentEl.addEventListener('keydown', this.handleKeyDown);
 	}
 
-	createActionButton(text: string, callback: () => void) {
+	onClose() {
+		const {contentEl} = this;
+		contentEl.removeEventListener('keydown', this.handleKeyDown);
+	}
+
+	createActionButton(text: string, callback: () => void, altNumber: number) {
 		const button = this.contentEl.createEl('button', {text: text});
 		button.addEventListener('click', () => {
 			callback();
 			this.close();
 		});
+		const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
+		shortcutEl.setText(`Alt+${altNumber}`);
+	}
+
+	updateSelectedButton() {
+		const buttons = this.contentEl.querySelectorAll('button');
+		buttons.forEach((button, index) => {
+			if (index === this.selectedIndex) {
+				button.addClass('selected');
+			} else {
+				button.removeClass('selected');
+			}
+		});
+	}
+
+	executeAction(index: number) {
+		this.actions[index].callback();
+		this.close();
+	}
+
+	handleKeyDown = (event: KeyboardEvent) => {
+		if (event.altKey) {
+			const num = parseInt(event.key);
+			if (num >= 1 && num <= this.actions.length) {
+				this.executeAction(num - 1);
+				event.preventDefault();
+			}
+		} else if (event.key === 'ArrowUp') {
+			this.selectedIndex = (this.selectedIndex - 1 + this.actions.length) % this.actions.length;
+			this.updateSelectedButton();
+			event.preventDefault();
+		} else if (event.key === 'ArrowDown') {
+			this.selectedIndex = (this.selectedIndex + 1) % this.actions.length;
+			this.updateSelectedButton();
+			event.preventDefault();
+		} else if (event.key === 'Enter') {
+			this.executeAction(this.selectedIndex);
+			event.preventDefault();
+		}
 	}
 
 	async removeTag() {
