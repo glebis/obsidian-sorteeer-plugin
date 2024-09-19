@@ -399,23 +399,6 @@ class SorteeerModal extends Modal {
 				break;
 		}
 	}
-
-	handleNumberShortcut(num: number) {
-		switch(num) {
-			case 1:
-				this.deleteNote();
-				break;
-			case 2:
-				this.moveNote();
-				break;
-			case 3:
-				this.skipNote();
-				break;
-			case 4:
-				this.showMoreActions();
-				break;
-		}
-	}
 }
 
 class MoreActionsModal extends Modal {
