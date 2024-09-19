@@ -363,8 +363,13 @@ class SorteeerModal extends Modal {
 
 	async deleteNote() {
 		if (this.currentNote) {
-			await this.app.vault.trash(this.currentNote, true);
-			this.loadNextNote();
+			if (await this.app.vault.adapter.exists(this.currentNote.path)) {
+				await this.app.vault.trash(this.currentNote, true);
+				this.loadNextNote();
+			} else {
+				this.plugin.showNotification("File has already been removed");
+				this.loadNextNote();
+			}
 		}
 	}
 
