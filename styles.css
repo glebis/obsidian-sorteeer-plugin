@@ -9,17 +9,28 @@
     max-width: 1000px;
 }
 
-.sorteeer-modal .sorteeer-note-title {
-    margin-bottom: 10px;
-}
-
 .sorteeer-modal .sorteeer-edit-link {
     display: inline-block;
-    margin-bottom: 15px;
+    margin-bottom: 5px;
     color: var(--text-accent);
     text-decoration: underline;
-    float: right;
     font-size: 0.8em;
+}
+
+.sorteeer-modal .sorteeer-note-title {
+    margin-bottom: 10px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.sorteeer-modal .sorteeer-note-title:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.sorteeer-modal .sorteeer-note-title:focus {
+    background-color: var(--background-modifier-form-field);
+    outline: none;
 }
 
 .sorteeer-modal .note-content {

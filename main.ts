@@ -129,8 +129,6 @@ class SorteeerModal extends Modal {
 		const {contentEl} = this;
 		contentEl.empty();
 
-		const titleEl = contentEl.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
-		
 		const editLink = contentEl.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
 			e.preventDefault();
@@ -140,6 +138,21 @@ class SorteeerModal extends Modal {
 				this.close();
 			} else {
 				new Notice('Unable to open the file. No active leaf found.');
+			}
+		});
+
+		const titleEl = contentEl.createEl('h2', {text: note.basename, cls: 'sorteeer-note-title'});
+		titleEl.setAttribute('contenteditable', 'true');
+		titleEl.addEventListener('dblclick', (e) => {
+			e.preventDefault();
+			titleEl.focus();
+		});
+		titleEl.addEventListener('blur', async () => {
+			const newTitle = titleEl.innerText.trim();
+			if (newTitle !== note.basename) {
+				const newPath = note.path.replace(note.basename, newTitle);
+				await this.app.fileManager.renameFile(note, newPath);
+				this.currentNote = this.app.vault.getAbstractFileByPath(newPath) as TFile;
 			}
 		});
 
