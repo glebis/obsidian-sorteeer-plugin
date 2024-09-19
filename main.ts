@@ -334,7 +334,7 @@ class SorteeerModal extends Modal {
 		
 		const selectFolderButton = contentEl.createEl('button', {text: 'Select New Folder'});
 		selectFolderButton.addEventListener('click', () => {
-			new FolderSuggestModal(this.app, (folder: TFolder) => {
+			new FolderSuggestModal(this.app, this.plugin, (folder: TFolder) => {
 				this.plugin.settings.sortFolder = folder.path;
 				this.plugin.saveSettings();
 				this.loadNextNote();
