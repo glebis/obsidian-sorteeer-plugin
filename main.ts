@@ -78,6 +78,8 @@ export default class SorteeerPlugin extends Plugin {
 class SorteeerModal extends Modal {
 	plugin: SorteeerPlugin;
 	currentNote: TFile | null;
+	private sortedNotes: TFile[] = [];
+	private currentIndex: number = 0;
 
 	constructor(app: App, plugin: SorteeerPlugin) {
 		super(app);
@@ -97,6 +99,9 @@ class SorteeerModal extends Modal {
 		contentEl.removeEventListener('keydown', this.onKeyDown);
 	}
 
+	private sortedNotes: TFile[] = [];
+	private currentIndex: number = 0;
+
 	async loadNextNote() {
 		const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.sortFolder) as TFolder;
 		if (!folder) {
@@ -111,24 +116,31 @@ class SorteeerModal extends Modal {
 			return;
 		}
 
-		let note: TFile;
-		switch (this.plugin.settings.sortOrder) {
-			case 'random':
-				note = notes[Math.floor(Math.random() * notes.length)];
-				break;
-			case 'oldest':
-				note = notes.sort((a, b) => a.stat.ctime - b.stat.ctime)[0];
-				break;
-			case 'newest':
-				note = notes.sort((a, b) => b.stat.ctime - a.stat.ctime)[0];
-				break;
-			case 'smallest':
-				note = notes.sort((a, b) => a.stat.size - b.stat.size)[0];
-				break;
+		if (this.sortedNotes.length === 0 || this.currentIndex >= this.sortedNotes.length) {
+			switch (this.plugin.settings.sortOrder) {
+				case 'random':
+					this.sortedNotes = notes.sort(() => Math.random() - 0.5);
+					break;
+				case 'oldest':
+					this.sortedNotes = notes.sort((a, b) => a.stat.ctime - b.stat.ctime);
+					break;
+				case 'newest':
+					this.sortedNotes = notes.sort((a, b) => b.stat.ctime - a.stat.ctime);
+					break;
+				case 'smallest':
+					this.sortedNotes = notes.sort((a, b) => a.stat.size - b.stat.size);
+					break;
+			}
+			this.currentIndex = 0;
 		}
 
-		this.currentNote = note;
-		this.displayNote(note);
+		this.currentNote = this.sortedNotes[this.currentIndex];
+		this.displayNote(this.currentNote);
+		this.currentIndex++;
+
+		if (this.currentIndex >= this.sortedNotes.length) {
+			this.currentIndex = 0;
+		}
 	}
 
 	async displayNote(note: TFile) {
