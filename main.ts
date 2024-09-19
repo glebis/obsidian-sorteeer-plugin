@@ -400,6 +400,23 @@ class SorteeerModal extends Modal {
 				break;
 		}
 	}
+
+	handleNumberShortcut(num: number) {
+		switch(num) {
+			case 1:
+				this.deleteNote();
+				break;
+			case 2:
+				this.moveNote();
+				break;
+			case 3:
+				this.skipNote();
+				break;
+			case 4:
+				this.showMoreActions();
+				break;
+		}
+	}
 }
 
 class MoreActionsModal extends Modal {
@@ -417,7 +434,8 @@ class MoreActionsModal extends Modal {
 			{text: `Add Tag (${this.plugin.settings.addTagAction})`, callback: () => this.addTag()},
 			{text: `Add Star (${this.plugin.settings.addStarAction})`, callback: () => this.addStar()},
 			{text: 'Add Link', callback: () => this.addLink()},
-			{text: 'Add to Daily Note', callback: () => this.addToDailyNote()}
+			{text: 'Add to Daily Note', callback: () => this.addToDailyNote()},
+			{text: 'Copy Link', callback: () => this.copyNoteLink()}
 		];
 		this.selectedIndex = 0;
 	}
@@ -530,6 +548,16 @@ class MoreActionsModal extends Modal {
 
 	async addToDailyNote() {
 		await this.plugin.addToDailyNote(this.parentModal.currentNote);
+	}
+
+	copyNoteLink() {
+		if (this.parentModal.currentNote) {
+			const noteLink = this.app.fileManager.generateMarkdownLink(this.parentModal.currentNote, '');
+			navigator.clipboard.writeText(noteLink);
+			this.plugin.showNotification('Note link copied to clipboard');
+			this.close();
+			this.parentModal.loadNextNote();
+		}
 	}
 
 	async getDailyNote(): Promise<TFile | null> {
