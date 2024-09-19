@@ -38,6 +38,20 @@
     color: var(--text-muted);
 }
 
+.sorteeer-modal .sorteeer-folder-info {
+    margin-bottom: 5px;
+}
+
+.sorteeer-modal .sorteeer-change-folder {
+    color: var(--text-accent);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.sorteeer-modal .sorteeer-change-folder:hover {
+    text-decoration: none;
+}
+
 .sorteeer-modal .sorteeer-note-title:hover {
     background-color: var(--background-modifier-hover);
 }

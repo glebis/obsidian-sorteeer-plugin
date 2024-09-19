@@ -404,10 +404,7 @@ class SorteeerModal extends Modal {
 		// Add event listener for keyboard shortcuts
 		contentEl.addEventListener('keydown', this.onKeyDown);
 
-		// Add footer with notes reviewed count
-		const footer = contentEl.createDiv('sorteeer-footer');
-		const { reviewed, deleted } = this.getNotesReviewedToday();
-		footer.setText(`Notes reviewed today: ${reviewed} | Deleted: ${deleted}`);
+		this.createFooter();
 
 		this.focusSkipButton();
 	}
@@ -493,6 +490,24 @@ class SorteeerModal extends Modal {
 		if (skipButton) {
 			skipButton.focus();
 		}
+	}
+
+	createFooter() {
+		const footer = this.contentEl.createEl('div', {cls: 'sorteeer-footer'});
+		const { reviewed, deleted } = this.getNotesReviewedToday();
+		const folderInfo = footer.createEl('div', {cls: 'sorteeer-folder-info'});
+		folderInfo.createSpan({text: `Current folder: ${this.plugin.settings.sortFolder} `});
+		const changeLink = folderInfo.createEl('a', {text: 'Change', cls: 'sorteeer-change-folder'});
+		changeLink.addEventListener('click', (e) => {
+			e.preventDefault();
+			new FolderSuggestModal(this.app, this.plugin, (folder: TFolder) => {
+				this.plugin.settings.sortFolder = folder.path;
+				this.plugin.saveSettings();
+				this.loadNextNote();
+				this.createFooter(); // Refresh the footer
+			}).open();
+		});
+		footer.createEl('div', {text: `Notes reviewed today: ${reviewed} | Deleted: ${deleted}`});
 	}
 }
 
