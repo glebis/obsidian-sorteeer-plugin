@@ -270,15 +270,19 @@ class SorteeerModal extends Modal {
 		contentEl.removeEventListener('keydown', this.onKeyDown);
 	}
 
-	private getNotesReviewedToday(): number {
+	private getNotesReviewedToday(): { reviewed: number; deleted: number } {
 		const today = new Date().toDateString();
-		let count = 0;
+		let reviewed = 0;
+		let deleted = 0;
 		for (const [action, actionCount] of Object.entries(this.plugin.actionStats)) {
 			if (action === 'noteDisplayed' || action.startsWith(today)) {
-				count += actionCount;
+				reviewed += actionCount;
+			}
+			if (action === 'deleteNote') {
+				deleted += actionCount;
 			}
 		}
-		return count;
+		return { reviewed, deleted };
 	}
 
 	async loadNextNote() {
@@ -374,7 +378,8 @@ class SorteeerModal extends Modal {
 
 		// Add footer with notes reviewed count
 		const footer = contentEl.createDiv('sorteeer-footer');
-		footer.setText(`Notes reviewed today: ${this.getNotesReviewedToday()}`);
+		const { reviewed, deleted } = this.getNotesReviewedToday();
+		footer.setText(`Notes reviewed today: ${reviewed} | Deleted: ${deleted}`);
 
 		this.focusSkipButton();
 	}
