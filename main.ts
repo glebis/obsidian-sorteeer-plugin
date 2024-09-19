@@ -130,8 +130,13 @@ class SorteeerModal extends Modal {
 		const editLink = contentEl.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
 			e.preventDefault();
-			this.app.workspace.activeLeaf.openFile(note);
-			this.close();
+			const activeLeaf = this.app.workspace.activeLeaf;
+			if (activeLeaf) {
+				activeLeaf.openFile(note);
+				this.close();
+			} else {
+				new Notice('Unable to open the file. No active leaf found.');
+			}
 		});
 
 		const content = await this.app.vault.read(note);
