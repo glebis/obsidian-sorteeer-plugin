@@ -336,7 +336,7 @@ class SorteeerModal extends Modal {
 		settingsLink.addEventListener('click', (e) => {
 			e.preventDefault();
 			this.close();
-			this.app.setting.openTab('sorteeer');
+			this.app.settings.openTab('sorteeer');
 		});
 		
 		contentEl.createEl('p', {text: 'or'});
