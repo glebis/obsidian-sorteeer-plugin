@@ -1038,14 +1038,54 @@ class StatsModal extends Modal {
 
 		const statsContainer = contentEl.createEl('div', {cls: 'sorteeer-stats-container'});
 
+		const actionLabels: {[key: string]: string} = {
+			'noteDisplayed': 'Notes Reviewed',
+			'deleteNote': 'Notes Deleted',
+			'moveToFolder': 'Notes Moved',
+			'removeTag': 'Tags Removed',
+			'addTag': 'Tags Added',
+			'toggleBookmark': 'Bookmarks Toggled',
+			'addLink': 'Links Added',
+			'addToDailyNote': 'Added to Daily Notes'
+		};
+
+		const todayStats: {[key: string]: number} = {};
+		const allTimeStats: {[key: string]: number} = {};
+
+		const today = new Date().toDateString();
+
 		for (const [action, count] of Object.entries(this.plugin.actionStats)) {
-			const statEl = statsContainer.createEl('div', {cls: 'sorteeer-stat-item'});
-			statEl.createEl('span', {text: `${action}: `, cls: 'sorteeer-stat-label'});
-			statEl.createEl('span', {text: `${count}`, cls: 'sorteeer-stat-value'});
+			if (action.startsWith(today)) {
+				const actionType = action.split(' ')[1];
+				todayStats[actionType] = (todayStats[actionType] || 0) + count;
+			} else {
+				allTimeStats[action] = count;
+			}
 		}
+
+		this.createStatsSection(statsContainer, 'Today\'s Activity', todayStats, actionLabels);
+		this.createStatsSection(statsContainer, 'All-Time Activity', allTimeStats, actionLabels);
 
 		const closeButton = contentEl.createEl('button', {text: 'Close', cls: 'sorteeer-close-button'});
 		closeButton.addEventListener('click', () => this.close());
+	}
+
+	createStatsSection(container: HTMLElement, title: string, stats: {[key: string]: number}, labels: {[key: string]: string}) {
+		const sectionEl = container.createEl('div', {cls: 'sorteeer-stats-section'});
+		sectionEl.createEl('h3', {text: title});
+
+		for (const [action, count] of Object.entries(stats)) {
+			const statEl = sectionEl.createEl('div', {cls: 'sorteeer-stat-item'});
+			const label = labels[action] || this.humanizeAction(action);
+			statEl.createEl('span', {text: `${label}: `, cls: 'sorteeer-stat-label'});
+			statEl.createEl('span', {text: `${count}`, cls: 'sorteeer-stat-value'});
+		}
+	}
+
+	humanizeAction(action: string): string {
+		return action
+			.replace(/([A-Z])/g, ' $1')
+			.replace(/^./, str => str.toUpperCase());
 	}
 
 	onClose() {
