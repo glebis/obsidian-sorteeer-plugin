@@ -88,6 +88,7 @@ class SorteeerModal extends Modal {
 	onClose() {
 		const {contentEl} = this;
 		contentEl.empty();
+		contentEl.removeEventListener('keydown', this.onKeyDown);
 	}
 
 	async loadNextNote() {
@@ -144,15 +145,24 @@ class SorteeerModal extends Modal {
 		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
 
 		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote());
-		this.createActionButton(actionBar, 'Move', this.plugin.settings.moveAction, () => this.moveNote());
-		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions());
+		this.createActionButton(actionBar, 'Delete', this.plugin.settings.deleteAction, () => this.deleteNote(), '←');
+		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
+		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move to ${moveFolder}`, () => this.moveNote(), '↓');
+		this.createActionButton(actionBar, 'Skip', 'Skip to next note', () => this.skipNote(), '→');
+		this.createActionButton(actionBar, 'More', 'More Actions', () => this.showMoreActions(), '↑');
+
+		// Add event listener for keyboard shortcuts
+		contentEl.addEventListener('keydown', this.onKeyDown);
 	}
 
-	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void) {
+	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string) {
 		const button = container.createEl('button', {text: text});
 		button.title = tooltip;
 		button.addEventListener('click', callback);
+		if (shortcut) {
+			const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
+			shortcutEl.setText(shortcut);
+		}
 	}
 
 	async deleteNote() {
@@ -174,9 +184,30 @@ class SorteeerModal extends Modal {
 		}
 	}
 
+	skipNote() {
+		this.loadNextNote();
+	}
+
 	showMoreActions() {
 		const modal = new MoreActionsModal(this.app, this.plugin, this);
 		modal.open();
+	}
+
+	onKeyDown = (event: KeyboardEvent) => {
+		switch(event.key) {
+			case 'ArrowLeft':
+				this.deleteNote();
+				break;
+			case 'ArrowDown':
+				this.moveNote();
+				break;
+			case 'ArrowRight':
+				this.skipNote();
+				break;
+			case 'ArrowUp':
+				this.showMoreActions();
+				break;
+		}
 	}
 }
 

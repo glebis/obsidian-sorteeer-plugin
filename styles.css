@@ -47,6 +47,12 @@
     background-color: var(--interactive-accent-hover);
 }
 
+.sorteeer-modal .action-bar button .sorteeer-shortcut {
+    margin-left: 5px;
+    font-size: 0.8em;
+    color: var(--text-faint);
+}
+
 .sorteeer-more-actions,
 .sorteeer-add-link {
     padding: 20px;
