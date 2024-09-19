@@ -4,7 +4,7 @@
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "Sort through your recent notes with customizable actions.",
-	"author": "Your Name",
-	"authorUrl": "https://your-website.com",
+	"author": "Gleb Kalinin",
+	"authorUrl": "https://glebkalinin.com",
 	"isDesktopOnly": false
 }
