@@ -64,7 +64,6 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	moveAction: 'Archive',
 	removeTagAction: '#stub',
 	addTagAction: '#reviewed',
-	bookmarkAction: 'Bookmark',
 	addLinkAction: '',
 	seeAlsoHeader: 'See also',
 	dailyNoteFormat: 'YYYY-MM-DD',
