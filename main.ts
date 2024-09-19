@@ -126,6 +126,14 @@ export default class SorteeerPlugin extends Plugin {
 			}
 		});
 
+		// Add a new method to handle folder changes
+		private handleFolderChange() {
+			if (this.sorteeerModal) {
+				this.sorteeerModal.resetNotes();
+				this.sorteeerModal.loadNextNote();
+			}
+		}
+
 		this.addSettingTab(new SorteeerSettingTab(this.app, this));
 
 		// Add contextual menu for folders
@@ -168,7 +176,11 @@ export default class SorteeerPlugin extends Plugin {
 	}
 
 	async saveSettings() {
+		const oldSortFolder = this.settings.sortFolder;
 		await this.saveData(this.settings);
+		if (this.settings.sortFolder !== oldSortFolder) {
+			this.handleFolderChange();
+		}
 	}
 
 	async loadActionStats() {
