@@ -156,6 +156,10 @@
     background-color: var(--interactive-accent-hover);
 }
 
+.sorteeer-more-actions button.selected {
+    outline: 3px solid var(--text-accent);
+}
+
 .sorteeer-add-link input {
     width: 100%;
     margin-bottom: 10px;
