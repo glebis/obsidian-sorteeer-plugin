@@ -206,7 +206,8 @@ class SorteeerModal extends Modal {
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
 		this.createActionButton(`Move to ${moveFolder}`, () => this.moveNote(), 2);
 		this.createActionButton('Skip', () => this.skipNote(), 3);
-		this.createActionButton('More', () => this.showMoreActions(), 4);
+		this.createActionButton('Copy Link', () => this.copyNoteLink(note), 4);
+		this.createActionButton('More', () => this.showMoreActions(), 5);
 
 		const editLink = contentEl.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
@@ -273,6 +274,13 @@ class SorteeerModal extends Modal {
 	}
 
 	skipNote() {
+		this.loadNextNote();
+	}
+
+	copyNoteLink(note: TFile) {
+		const noteLink = this.app.fileManager.generateMarkdownLink(note, '');
+		navigator.clipboard.writeText(noteLink);
+		new Notice('Note link copied to clipboard');
 		this.loadNextNote();
 	}
 
