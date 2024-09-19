@@ -540,6 +540,7 @@ class MoreActionsModal extends Modal {
 			if (num >= 1 && num <= this.actions.length) {
 				this.executeAction(num - 1);
 				event.preventDefault();
+				this.close();
 			}
 		} else if (event.key === 'ArrowUp') {
 			this.selectedIndex = (this.selectedIndex - 1 + this.actions.length) % this.actions.length;
@@ -552,6 +553,7 @@ class MoreActionsModal extends Modal {
 		} else if (event.key === 'Enter') {
 			this.executeAction(this.selectedIndex);
 			event.preventDefault();
+			this.close();
 		}
 	}
 
