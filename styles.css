@@ -103,14 +103,6 @@
     margin-left: 10px;
 }
 
-.sorteeer-more-actions button:last-child {
-    background-color: var(--interactive-success);
-}
-
-.sorteeer-more-actions button:last-child:hover {
-    background-color: var(--interactive-success-hover);
-}
-
 .sorteeer-more-actions button:hover,
 .sorteeer-add-link button:hover,
 .sorteeer-more-actions button.selected {
@@ -123,4 +115,38 @@
     padding: 10px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 5px;
+}
+
+.sorteeer-stats-modal {
+    padding: 20px;
+}
+
+.sorteeer-stats-container {
+    margin-top: 20px;
+}
+
+.sorteeer-stat-item {
+    margin-bottom: 10px;
+}
+
+.sorteeer-stat-label {
+    font-weight: bold;
+}
+
+.sorteeer-stat-value {
+    margin-left: 10px;
+}
+
+.sorteeer-close-button {
+    margin-top: 20px;
+    padding: 8px 16px;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.sorteeer-close-button:hover {
+    background-color: var(--interactive-accent-hover);
 }

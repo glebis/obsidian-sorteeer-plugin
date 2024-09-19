@@ -13,6 +13,7 @@ interface SorteeerSettings {
 	dailyNoteFormat: string;
 	dailyNoteFolder: string;
 	dailyNoteSection: string;
+	showNotifications: boolean;
 }
 
 const DEFAULT_SETTINGS: SorteeerSettings = {
@@ -27,15 +28,22 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	seeAlsoHeader: 'See also',
 	dailyNoteFormat: 'YYYY-MM-DD',
 	dailyNoteFolder: '/',
-	dailyNoteSection: '## Reviewed'
+	dailyNoteSection: '## Reviewed',
+	showNotifications: true
+}
+
+interface ActionStats {
+	[key: string]: number;
 }
 
 export default class SorteeerPlugin extends Plugin {
 	settings: SorteeerSettings;
 	sorteeerModal: SorteeerModal;
+	actionStats: ActionStats = {};
 
 	async onload() {
 		await this.loadSettings();
+		await this.loadActionStats();
 
 		this.addRibbonIcon('sort', 'Sorteeer', () => {
 			this.openSorteeerModal();
@@ -46,6 +54,13 @@ export default class SorteeerPlugin extends Plugin {
 			name: 'Open Sorteeer',
 			callback: () => {
 				this.openSorteeerModal();
+			}
+		});
+
+		this.registerDomEvent(document, 'keydown', (event: KeyboardEvent) => {
+			if (event.altKey && event.key >= '1' && event.key <= '5') {
+				this.handleGlobalShortcut(parseInt(event.key));
+				event.preventDefault();
 			}
 		});
 
@@ -66,12 +81,54 @@ export default class SorteeerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	async loadActionStats() {
+		const stats = await this.loadData('actionStats');
+		this.actionStats = stats || {};
+	}
+
+	async saveActionStats() {
+		await this.saveData('actionStats', this.actionStats);
+	}
+
 	openSorteeerModal() {
 		if (this.sorteeerModal) {
 			this.sorteeerModal.close();
 		}
 		this.sorteeerModal = new SorteeerModal(this.app, this);
 		this.sorteeerModal.open();
+	}
+
+	handleGlobalShortcut(num: number) {
+		if (this.sorteeerModal && this.sorteeerModal.currentNote) {
+			switch(num) {
+				case 1:
+					this.sorteeerModal.removeTag();
+					break;
+				case 2:
+					this.sorteeerModal.addTag();
+					break;
+				case 3:
+					this.sorteeerModal.addStar();
+					break;
+				case 4:
+					this.sorteeerModal.addLink();
+					break;
+				case 5:
+					this.sorteeerModal.addToDailyNote();
+					break;
+			}
+		}
+	}
+
+	incrementActionStat(action: string) {
+		this.actionStats[action] = (this.actionStats[action] || 0) + 1;
+		this.saveActionStats();
+	}
+
+	showNotification(message: string) {
+		if (this.settings.showNotifications) {
+			new Notice(message);
+		}
 	}
 }
 
@@ -361,6 +418,8 @@ class MoreActionsModal extends Modal {
 			content = content.replace(new RegExp(this.plugin.settings.removeTagAction, 'g'), '');
 			await this.app.vault.modify(this.parentModal.currentNote, content);
 			this.parentModal.displayNote(this.parentModal.currentNote);
+			this.plugin.incrementActionStat('removeTag');
+			this.plugin.showNotification('Tag removed');
 		}
 	}
 
@@ -370,6 +429,8 @@ class MoreActionsModal extends Modal {
 			content += `\n${this.plugin.settings.addTagAction}`;
 			await this.app.vault.modify(this.parentModal.currentNote, content);
 			this.parentModal.displayNote(this.parentModal.currentNote);
+			this.plugin.incrementActionStat('addTag');
+			this.plugin.showNotification('Tag added');
 		}
 	}
 
@@ -379,6 +440,8 @@ class MoreActionsModal extends Modal {
 			content = `${this.plugin.settings.addStarAction} ${content}`;
 			await this.app.vault.modify(this.parentModal.currentNote, content);
 			this.parentModal.displayNote(this.parentModal.currentNote);
+			this.plugin.incrementActionStat('addStar');
+			this.plugin.showNotification('Star added');
 		}
 	}
 
@@ -405,9 +468,10 @@ class MoreActionsModal extends Modal {
 				}
 
 				await this.app.vault.modify(dailyNote, content);
-				new Notice(`Added link to daily note: ${dailyNote.basename}`);
+				this.plugin.incrementActionStat('addToDailyNote');
+				this.plugin.showNotification(`Added link to daily note: ${dailyNote.basename}`);
 			} else {
-				new Notice("Failed to find or create daily note");
+				this.plugin.showNotification("Failed to find or create daily note");
 			}
 		}
 	}
@@ -601,6 +665,26 @@ class SorteeerSettingTab extends PluginSettingTab {
 					this.plugin.settings.dailyNoteSection = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Show Notifications')
+			.setDesc('Show notifications for actions')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showNotifications)
+				.onChange(async (value) => {
+					this.plugin.settings.showNotifications = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Add a button to view action stats
+		new Setting(containerEl)
+			.setName('View Action Stats')
+			.setDesc('View statistics for performed actions')
+			.addButton(button => button
+				.setButtonText('View Stats')
+				.onClick(() => {
+					new StatsModal(this.app, this.plugin).open();
+				}));
 	}
 }
 class FolderSuggestModal extends SuggestModal<TFolder> {
@@ -626,5 +710,37 @@ class FolderSuggestModal extends SuggestModal<TFolder> {
 		this.plugin.settings.moveAction = folder.path;
 		this.plugin.saveSettings();
 		this.parentModal.moveNote();
+	}
+}
+class StatsModal extends Modal {
+	plugin: SorteeerPlugin;
+
+	constructor(app: App, plugin: SorteeerPlugin) {
+		super(app);
+		this.plugin = plugin;
+	}
+
+	onOpen() {
+		const {contentEl} = this;
+		contentEl.empty();
+		contentEl.addClass('sorteeer-stats-modal');
+
+		contentEl.createEl('h2', {text: 'Action Statistics'});
+
+		const statsContainer = contentEl.createEl('div', {cls: 'sorteeer-stats-container'});
+
+		for (const [action, count] of Object.entries(this.plugin.actionStats)) {
+			const statEl = statsContainer.createEl('div', {cls: 'sorteeer-stat-item'});
+			statEl.createEl('span', {text: `${action}: `, cls: 'sorteeer-stat-label'});
+			statEl.createEl('span', {text: `${count}`, cls: 'sorteeer-stat-value'});
+		}
+
+		const closeButton = contentEl.createEl('button', {text: 'Close', cls: 'sorteeer-close-button'});
+		closeButton.addEventListener('click', () => this.close());
+	}
+
+	onClose() {
+		const {contentEl} = this;
+		contentEl.empty();
 	}
 }
