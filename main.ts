@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer } from 'obsidian';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -127,7 +127,7 @@ class SorteeerModal extends Modal {
 
 		const content = await this.app.vault.read(note);
 		const noteContent = contentEl.createDiv('note-content');
-		noteContent.innerHTML = content;
+		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
 
 		const actionBar = contentEl.createDiv('action-bar');
 		this.createActionButton(actionBar, '←', this.plugin.settings.deleteAction, () => this.deleteNote());
