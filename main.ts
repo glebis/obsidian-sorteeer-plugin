@@ -10,6 +10,9 @@ interface SorteeerSettings {
 	addStarAction: string;
 	addLinkAction: string;
 	seeAlsoHeader: string;
+	dailyNoteFormat: string;
+	dailyNoteFolder: string;
+	dailyNoteSection: string;
 }
 
 const DEFAULT_SETTINGS: SorteeerSettings = {
@@ -21,7 +24,10 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	addTagAction: '#reviewed',
 	addStarAction: '⭐',
 	addLinkAction: '',
-	seeAlsoHeader: 'See also'
+	seeAlsoHeader: 'See also',
+	dailyNoteFormat: 'YYYY-MM-DD',
+	dailyNoteFolder: '/',
+	dailyNoteSection: '## Reviewed'
 }
 
 export default class SorteeerPlugin extends Plugin {
@@ -267,7 +273,8 @@ class MoreActionsModal extends Modal {
 			{text: `Remove Tag (${this.plugin.settings.removeTagAction})`, callback: () => this.removeTag()},
 			{text: `Add Tag (${this.plugin.settings.addTagAction})`, callback: () => this.addTag()},
 			{text: `Add Star (${this.plugin.settings.addStarAction})`, callback: () => this.addStar()},
-			{text: 'Add Link', callback: () => this.addLink()}
+			{text: 'Add Link', callback: () => this.addLink()},
+			{text: 'Add to Daily Note', callback: () => this.addToDailyNote()}
 		];
 		this.selectedIndex = 0;
 	}
@@ -369,6 +376,48 @@ class MoreActionsModal extends Modal {
 		if (this.parentModal.currentNote) {
 			new AddLinkModal(this.app, this.plugin, this.parentModal).open();
 		}
+	}
+
+	async addToDailyNote() {
+		if (this.parentModal.currentNote) {
+			const dailyNote = this.getDailyNote();
+			if (dailyNote) {
+				let content = await this.app.vault.read(dailyNote);
+				const linkToAdd = `[[${this.parentModal.currentNote.basename}]]`;
+				const sectionToAdd = this.plugin.settings.dailyNoteSection;
+				
+				if (content.includes(sectionToAdd)) {
+					const parts = content.split(sectionToAdd);
+					parts[1] = `\n- ${linkToAdd}${parts[1]}`;
+					content = parts.join(sectionToAdd);
+				} else {
+					content += `\n\n${sectionToAdd}\n- ${linkToAdd}`;
+				}
+
+				await this.app.vault.modify(dailyNote, content);
+				new Notice(`Added link to daily note: ${dailyNote.basename}`);
+			} else {
+				new Notice("Failed to find or create daily note");
+			}
+		}
+	}
+
+	getDailyNote(): TFile | null {
+		const { moment } = window;
+		const dateString = moment().format(this.plugin.settings.dailyNoteFormat);
+		const dailyNotePath = `${this.plugin.settings.dailyNoteFolder}/${dateString}.md`;
+		let dailyNote = this.app.vault.getAbstractFileByPath(dailyNotePath);
+
+		if (!dailyNote) {
+			try {
+				dailyNote = this.app.vault.create(dailyNotePath, "");
+			} catch (err) {
+				console.error("Failed to create daily note", err);
+				return null;
+			}
+		}
+
+		return dailyNote instanceof TFile ? dailyNote : null;
 	}
 }
 
@@ -507,6 +556,39 @@ class SorteeerSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.seeAlsoHeader)
 				.onChange(async (value) => {
 					this.plugin.settings.seeAlsoHeader = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Daily Note Format')
+			.setDesc('Format for daily note filenames (e.g., YYYY-MM-DD)')
+			.addText(text => text
+				.setPlaceholder('YYYY-MM-DD')
+				.setValue(this.plugin.settings.dailyNoteFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.dailyNoteFormat = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Daily Note Folder')
+			.setDesc('Folder for daily notes')
+			.addText(text => text
+				.setPlaceholder('/')
+				.setValue(this.plugin.settings.dailyNoteFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.dailyNoteFolder = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Daily Note Section')
+			.setDesc('Section to add notes under in daily note')
+			.addText(text => text
+				.setPlaceholder('## Reviewed')
+				.setValue(this.plugin.settings.dailyNoteSection)
+				.onChange(async (value) => {
+					this.plugin.settings.dailyNoteSection = value;
 					await this.plugin.saveSettings();
 				}));
 	}

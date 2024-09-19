@@ -98,6 +98,15 @@
     opacity: 0.8;
 }
 
+.sorteeer-more-actions button:last-child {
+    margin-top: 20px;
+    background-color: var(--interactive-success);
+}
+
+.sorteeer-more-actions button:last-child:hover {
+    background-color: var(--interactive-success-hover);
+}
+
 .sorteeer-more-actions button:hover,
 .sorteeer-add-link button:hover,
 .sorteeer-more-actions button.selected {
