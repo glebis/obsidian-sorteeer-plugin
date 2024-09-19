@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile, InternalPlugins } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile } from 'obsidian';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -609,24 +609,26 @@ class MoreActionsModal extends Modal {
 	async addBookmark() {
 		if (this.parentModal.currentNote) {
 			const file = this.parentModal.currentNote;
-			const bookmarkManager = this.app.internalPlugins.plugins.bookmarks;
 			
-			if (bookmarkManager && bookmarkManager.instance) {
-				const isBookmarked = bookmarkManager.instance.isBookmarked(file.path);
-				
-				if (isBookmarked) {
-					bookmarkManager.instance.removeBookmark(file.path);
-					this.plugin.showNotification('Bookmark removed');
-				} else {
-					bookmarkManager.instance.addBookmark(file.path);
-					this.plugin.showNotification('Bookmark added');
-				}
-				
-				this.plugin.incrementActionStat('toggleBookmark');
-				this.parentModal.displayNote(file);
+			// Check if the file is already bookmarked
+			const isBookmarked = this.app.metadataCache.getFileCache(file)?.frontmatter?.tags?.includes('bookmark');
+			
+			if (isBookmarked) {
+				// Remove the bookmark tag
+				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+					frontmatter.tags = (frontmatter.tags || []).filter((tag: string) => tag !== 'bookmark');
+				});
+				this.plugin.showNotification('Bookmark removed');
 			} else {
-				this.plugin.showNotification('Core Bookmarks plugin is not available');
+				// Add the bookmark tag
+				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+					frontmatter.tags = [...(frontmatter.tags || []), 'bookmark'];
+				});
+				this.plugin.showNotification('Bookmark added');
 			}
+			
+			this.plugin.incrementActionStat('toggleBookmark');
+			this.parentModal.displayNote(file);
 		}
 	}
 
