@@ -608,25 +608,18 @@ class MoreActionsModal extends Modal {
 
 	async addBookmark() {
 		if (this.parentModal.currentNote) {
-			// Toggle bookmark status
 			const file = this.parentModal.currentNote;
-			const isBookmarked = this.app.metadataCache.getFileCache(file)?.tags?.some(tag => tag.tag === '#bookmark');
+			const bookmarkItems = this.app.internalPlugins.getPluginById('bookmarks').instance.items;
+			const isBookmarked = bookmarkItems.some((item: any) => item.type === 'file' && item.path === file.path);
+			
 			if (isBookmarked) {
-				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-					if (frontmatter.tags) {
-						frontmatter.tags = frontmatter.tags.filter((tag: string) => tag !== 'bookmark');
-					}
-				});
+				await this.app.internalPlugins.getPluginById('bookmarks').instance.removeBookmark(file.path);
 				this.plugin.showNotification('Bookmark removed');
 			} else {
-				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-					if (!frontmatter.tags) {
-						frontmatter.tags = [];
-					}
-					frontmatter.tags.push('bookmark');
-				});
+				await this.app.internalPlugins.getPluginById('bookmarks').instance.addBookmark(file.path, 'file');
 				this.plugin.showNotification('Bookmark added');
 			}
+			
 			this.plugin.incrementActionStat('toggleBookmark');
 			this.parentModal.displayNote(file);
 		}
