@@ -377,12 +377,10 @@ class SorteeerModal extends Modal {
 		const editLink = titleContainer.createEl('a', {text: 'Edit', cls: 'sorteeer-edit-link'});
 		editLink.addEventListener('click', (e) => {
 			e.preventDefault();
-			const activeLeaf = this.app.workspace.activeLeaf;
-			if (activeLeaf) {
-				activeLeaf.openFile(note);
-				this.close();
+			if (note) {
+				this.app.workspace.openLinkText(note.path, '', true);
 			} else {
-				new Notice('Unable to open the file. No active leaf found.');
+				new Notice('Unable to open the file. Note not found.');
 			}
 		});
 		titleEl.setAttribute('contenteditable', 'true');
