@@ -16,6 +16,11 @@ interface SorteeerSettings {
 	showNotifications: boolean;
 }
 
+interface DeletedNote {
+	file: TFile;
+	content: string;
+}
+
 class FolderSuggest {
     app: App;
     inputEl: HTMLInputElement;
@@ -77,6 +82,7 @@ export default class SorteeerPlugin extends Plugin {
 	settings: SorteeerSettings;
 	sorteeerModal: SorteeerModal;
 	actionStats: ActionStats = {};
+	deletedNotes: DeletedNote[] = [];
 
 	async onload() {
 		await this.loadSettings();
@@ -94,14 +100,36 @@ export default class SorteeerPlugin extends Plugin {
 			}
 		});
 
+		this.addCommand({
+			id: 'undo-last-deletion',
+			name: 'Undo Last Deletion',
+			callback: () => {
+				this.undoLastDeletion();
+			}
+		});
+
 		this.registerDomEvent(document, 'keydown', (event: KeyboardEvent) => {
 			if (event.altKey && event.key >= '1' && event.key <= '5') {
 				this.handleGlobalShortcut(parseInt(event.key));
 				event.preventDefault();
 			}
+			if ((event.metaKey || event.ctrlKey) && event.key === 'z') {
+				this.undoLastDeletion();
+				event.preventDefault();
+			}
 		});
 
 		this.addSettingTab(new SorteeerSettingTab(this.app, this));
+	}
+
+	async undoLastDeletion() {
+		const lastDeleted = this.deletedNotes.pop();
+		if (lastDeleted) {
+			await this.app.vault.create(lastDeleted.file.path, lastDeleted.content);
+			this.showNotification(`Restored: ${lastDeleted.file.name}`);
+		} else {
+			this.showNotification("No more deletions to undo");
+		}
 	}
 
 	onunload() {
@@ -364,7 +392,10 @@ class SorteeerModal extends Modal {
 	async deleteNote() {
 		if (this.currentNote) {
 			if (await this.app.vault.adapter.exists(this.currentNote.path)) {
+				const content = await this.app.vault.read(this.currentNote);
+				this.plugin.deletedNotes.push({ file: this.currentNote, content: content });
 				await this.app.vault.trash(this.currentNote, true);
+				this.plugin.showNotification(`Deleted: ${this.currentNote.name} (Cmd+Z to undo)`);
 				this.loadNextNote();
 			} else {
 				this.plugin.showNotification("File has already been removed");
