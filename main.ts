@@ -609,10 +609,10 @@ class MoreActionsModal extends Modal {
 	async addBookmark() {
 		if (this.parentModal.currentNote) {
 			const file = this.parentModal.currentNote;
-			const bookmarkManager = this.app.plugins.plugins['bookmarks'];
+			const bookmarkManager = this.app.plugins.getPlugin('bookmarks');
 			
 			if (bookmarkManager) {
-				const isBookmarked = bookmarkManager.isBookmarked(file.path);
+				const isBookmarked = await bookmarkManager.isBookmarked(file.path);
 				
 				if (isBookmarked) {
 					await bookmarkManager.removeBookmark(file.path);
