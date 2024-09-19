@@ -368,7 +368,7 @@ class SorteeerModal extends Modal {
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
 		this.createActionButton(actionBar, `Move to _archive`, `Move note to _archive folder`, () => this.moveNote(), 'Alt+↓');
 		this.createActionButton(actionBar, 'Skip', 'Skip note', () => this.skipNote(), 'Alt+→');
-		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), 'Alt+↑');
+		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), 'Alt+↑').setAttribute('data-action', 'more');
 
 		const titleContainer = contentEl.createDiv('sorteeer-title-container');
 
