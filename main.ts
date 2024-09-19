@@ -430,12 +430,12 @@ class SorteeerModal extends Modal {
 	}
 
 	createActionButton(container: HTMLElement, text: string, tooltip: string, callback: () => void, shortcut?: string): HTMLButtonElement {
-		const button = container.createEl('button', {text: text});
+		const button = container.createEl('button');
+		const textEl = button.createSpan({text: text});
 		button.title = tooltip;
 		button.addEventListener('click', callback);
 		if (shortcut) {
-			const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
-			shortcutEl.setText(shortcut);
+			const shortcutEl = button.createSpan({text: shortcut, cls: 'sorteeer-shortcut'});
 		}
 		return button;
 	}
