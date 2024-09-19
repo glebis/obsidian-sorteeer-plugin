@@ -99,9 +99,6 @@ class SorteeerModal extends Modal {
 		contentEl.removeEventListener('keydown', this.onKeyDown);
 	}
 
-	private sortedNotes: TFile[] = [];
-	private currentIndex: number = 0;
-
 	async loadNextNote() {
 		const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.sortFolder) as TFolder;
 		if (!folder) {
