@@ -302,11 +302,11 @@ class SorteeerModal extends Modal {
 		this.plugin.incrementActionStat('noteDisplayed');
 
 		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), '1');
+		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), 'Alt+←');
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
-		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move note to ${moveFolder} folder`, () => this.moveNote(), '2');
-		this.createActionButton(actionBar, 'Skip', 'Skip note', () => this.skipNote(), '3');
-		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), '4');
+		this.createActionButton(actionBar, `Move to ${moveFolder}`, `Move note to ${moveFolder} folder`, () => this.moveNote(), 'Alt+↓');
+		this.createActionButton(actionBar, 'Skip', 'Skip note', () => this.skipNote(), 'Alt+→');
+		this.createActionButton(actionBar, 'More', 'Show more actions', () => this.showMoreActions(), 'Alt+↑');
 
 		const titleContainer = contentEl.createDiv('sorteeer-title-container');
 
@@ -355,7 +355,7 @@ class SorteeerModal extends Modal {
 		button.addEventListener('click', callback);
 		if (shortcut) {
 			const shortcutEl = button.createSpan({cls: 'sorteeer-shortcut'});
-			shortcutEl.setText(`Alt+${shortcut}`);
+			shortcutEl.setText(shortcut);
 		}
 	}
 
@@ -411,31 +411,8 @@ class SorteeerModal extends Modal {
 				case 'ArrowUp':
 					this.showMoreActions();
 					break;
-				case '1':
-				case '2':
-				case '3':
-				case '4':
-					this.handleNumberShortcut(parseInt(event.key));
-					break;
 			}
 			event.preventDefault();
-		}
-	}
-
-	handleNumberShortcut(num: number) {
-		switch(num) {
-			case 1:
-				this.deleteNote();
-				break;
-			case 2:
-				this.moveNote();
-				break;
-			case 3:
-				this.skipNote();
-				break;
-			case 4:
-				this.showMoreActions();
-				break;
 		}
 	}
 }
