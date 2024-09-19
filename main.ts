@@ -85,7 +85,7 @@ export default class SorteeerPlugin extends Plugin {
 	deletedNotes: DeletedNote[] = [];
 
 	openSettingsTab() {
-		this.app.setting.open('sorteeer');
+		this.app.setting.openTabById('sorteeer');
 	}
 
 	async onload() {
@@ -356,7 +356,7 @@ class SorteeerModal extends Modal {
 	}
 
 	openSettingsTab() {
-		this.app.setting.open('sorteeer');
+		this.app.setting.openTabById('sorteeer');
 	}
 
 	async displayNote(note: TFile) {
