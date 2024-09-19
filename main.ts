@@ -282,6 +282,16 @@ class SorteeerModal extends Modal {
 		this.plugin = plugin;
 	}
 
+	public deleteNote() {
+		if (this.currentNote) {
+			this.plugin.deletedNotes.push({ file: this.currentNote, content: this.currentNote.content });
+			this.app.vault.trash(this.currentNote, true).then(() => {
+				this.plugin.showNotification(`Deleted: ${this.currentNote.name} (Cmd+Z to undo)`);
+				this.loadNextNote();
+			});
+		}
+	}
+
 	onOpen() {
 		const {contentEl} = this;
 		contentEl.empty();
