@@ -538,7 +538,8 @@ class MoreActionsModal extends Modal {
 
 	createActionButton(text: string, callback: () => void, number: number): HTMLButtonElement {
 		const button = this.contentEl.createEl('button');
-		const textEl = button.createSpan({text: `${number}. ${text}`});
+		const textEl = button.createSpan({text: text});
+		const shortcutEl = button.createSpan({text: `${number}`, cls: 'sorteeer-shortcut'});
 		button.addEventListener('click', () => {
 			callback();
 			this.close();

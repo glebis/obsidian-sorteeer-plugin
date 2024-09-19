@@ -145,6 +145,7 @@
 
 .sorteeer-more-actions button {
     position: relative;
+    padding-right: 40px; /* Add space for the shortcut number */
 }
 
 .sorteeer-more-actions button .sorteeer-shortcut {
@@ -156,6 +157,7 @@
     opacity: 1;
     font-size: 1.2em;
     font-weight: bold;
+    display: inline-block; /* Ensure the shortcut is always visible */
 }
 
 .sorteeer-more-actions button:hover,
