@@ -384,7 +384,7 @@ class SorteeerModal extends Modal {
 		this.plugin.incrementActionStat('noteDisplayed');
 
 		const actionBar = contentEl.createDiv('action-bar');
-		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), 'Alt+←');
+		this.createActionButton(actionBar, 'Delete', 'Delete note', () => this.deleteNote(), 'Alt+Delete');
 		const moveFolder = this.plugin.settings.moveAction === '/' ? 'Root' : this.plugin.settings.moveAction;
 		this.createActionButton(actionBar, `Move to _archive`, `Move note to _archive folder`, () => this.moveNote(), 'Alt+↓');
 		this.createActionButton(actionBar, 'Skip', 'Skip note', () => this.skipNote(), 'Alt+→');
@@ -473,6 +473,17 @@ class SorteeerModal extends Modal {
 		this.loadNextNote();
 	}
 
+	navigateToPreviousNote() {
+		if (this.currentIndex > 0) {
+			this.currentIndex -= 2;
+			this.loadNextNote();
+		} else {
+			// If we're at the start, wrap around to the end
+			this.currentIndex = this.sortedNotes.length - 1;
+			this.loadNextNote();
+		}
+	}
+
 	copyNoteLink(note: TFile) {
 		const noteLink = this.app.fileManager.generateMarkdownLink(note, '');
 		navigator.clipboard.writeText(noteLink);
@@ -488,7 +499,7 @@ class SorteeerModal extends Modal {
 	onKeyDown = (event: KeyboardEvent) => {
 		if (event.altKey) {
 			switch(event.key) {
-				case 'ArrowLeft':
+				case 'Delete':
 					this.deleteNote();
 					break;
 				case 'ArrowDown':
@@ -499,6 +510,9 @@ class SorteeerModal extends Modal {
 					break;
 				case 'ArrowUp':
 					this.showMoreActions();
+					break;
+				case 'ArrowLeft':
+					this.navigateToPreviousNote();
 					break;
 			}
 			event.preventDefault();
