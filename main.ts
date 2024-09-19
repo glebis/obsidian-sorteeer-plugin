@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile, InternalPlugins } from 'obsidian';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -609,24 +609,23 @@ class MoreActionsModal extends Modal {
 	async addBookmark() {
 		if (this.parentModal.currentNote) {
 			const file = this.parentModal.currentNote;
-			// @ts-ignore
-			const bookmarkManager = this.app.plugins.plugins['bookmarks'];
+			const bookmarkManager = this.app.internalPlugins.plugins.bookmarks;
 			
-			if (bookmarkManager) {
-				const isBookmarked = await bookmarkManager.isBookmarked(file.path);
+			if (bookmarkManager && bookmarkManager.instance) {
+				const isBookmarked = bookmarkManager.instance.isBookmarked(file.path);
 				
 				if (isBookmarked) {
-					await bookmarkManager.removeBookmark(file.path);
+					bookmarkManager.instance.removeBookmark(file.path);
 					this.plugin.showNotification('Bookmark removed');
 				} else {
-					await bookmarkManager.addBookmark(file.path);
+					bookmarkManager.instance.addBookmark(file.path);
 					this.plugin.showNotification('Bookmark added');
 				}
 				
 				this.plugin.incrementActionStat('toggleBookmark');
 				this.parentModal.displayNote(file);
 			} else {
-				this.plugin.showNotification('Bookmarks plugin is not available');
+				this.plugin.showNotification('Core Bookmarks plugin is not available');
 			}
 		}
 	}
