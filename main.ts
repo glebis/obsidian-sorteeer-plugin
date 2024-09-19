@@ -288,14 +288,14 @@ class SorteeerModal extends Modal {
 	async loadNextNote() {
 		const folder = this.app.vault.getAbstractFileByPath(this.plugin.settings.sortFolder) as TFolder;
 		if (!folder) {
-			new Notice('Sorteeer: Invalid folder path');
+			this.displayEmptyFolderMessage('Invalid folder path');
 			return;
 		}
 
 		const notes = folder.children.filter(file => file instanceof TFile && file.extension === 'md') as TFile[];
 		
 		if (notes.length === 0) {
-			new Notice('Sorteeer: No notes found in the specified folder');
+			this.displayEmptyFolderMessage('No notes found in the specified folder');
 			return;
 		}
 
@@ -324,6 +324,22 @@ class SorteeerModal extends Modal {
 		if (this.currentIndex >= this.sortedNotes.length) {
 			this.currentIndex = 0;
 		}
+	}
+
+	displayEmptyFolderMessage(message: string) {
+		const {contentEl} = this;
+		contentEl.empty();
+		contentEl.createEl('h2', {text: 'Sorteeer'});
+		contentEl.createEl('p', {text: message});
+		
+		const selectFolderButton = contentEl.createEl('button', {text: 'Select New Folder'});
+		selectFolderButton.addEventListener('click', () => {
+			new FolderSuggestModal(this.app, this.plugin, (folder: TFolder) => {
+				this.plugin.settings.sortFolder = folder.path;
+				this.plugin.saveSettings();
+				this.loadNextNote();
+			}).open();
+		});
 	}
 
 	async displayNote(note: TFile) {
@@ -921,5 +937,28 @@ class StatsModal extends Modal {
 	onClose() {
 		const {contentEl} = this;
 		contentEl.empty();
+	}
+}
+class FolderSuggestModal extends SuggestModal<TFolder> {
+	plugin: SorteeerPlugin;
+	onChoose: (folder: TFolder) => void;
+
+	constructor(app: App, plugin: SorteeerPlugin, onChoose: (folder: TFolder) => void) {
+		super(app);
+		this.plugin = plugin;
+		this.onChoose = onChoose;
+	}
+
+	getSuggestions(query: string): TFolder[] {
+		return this.app.vault.getAllLoadedFiles()
+			.filter(file => file instanceof TFolder && file.path.toLowerCase().includes(query.toLowerCase())) as TFolder[];
+	}
+
+	renderSuggestion(folder: TFolder, el: HTMLElement) {
+		el.createEl("div", { text: folder.path });
+	}
+
+	onChooseSuggestion(folder: TFolder, evt: MouseEvent | KeyboardEvent) {
+		this.onChoose(folder);
 	}
 }

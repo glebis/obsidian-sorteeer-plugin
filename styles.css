@@ -175,3 +175,16 @@
 .sorteeer-close-button:hover {
     background-color: var(--interactive-accent-hover);
 }
+.sorteeer-modal button.select-folder {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 20px;
+}
+
+.sorteeer-modal button.select-folder:hover {
+    background-color: var(--interactive-accent-hover);
+}
