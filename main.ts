@@ -82,12 +82,12 @@ export default class SorteeerPlugin extends Plugin {
 	}
 
 	async loadActionStats() {
-		const stats = await this.loadData('actionStats');
-		this.actionStats = stats || {};
+		const stats = await this.loadData();
+		this.actionStats = stats?.actionStats || {};
 	}
 
 	async saveActionStats() {
-		await this.saveData('actionStats', this.actionStats);
+		await this.saveData({ ...await this.loadData(), actionStats: this.actionStats });
 	}
 
 	openSorteeerModal() {
@@ -102,19 +102,19 @@ export default class SorteeerPlugin extends Plugin {
 		if (this.sorteeerModal && this.sorteeerModal.currentNote) {
 			switch(num) {
 				case 1:
-					this.sorteeerModal.removeTag();
+					(this.sorteeerModal as any).removeTag();
 					break;
 				case 2:
-					this.sorteeerModal.addTag();
+					(this.sorteeerModal as any).addTag();
 					break;
 				case 3:
-					this.sorteeerModal.addStar();
+					(this.sorteeerModal as any).addStar();
 					break;
 				case 4:
-					this.sorteeerModal.addLink();
+					(this.sorteeerModal as any).addLink();
 					break;
 				case 5:
-					this.sorteeerModal.addToDailyNote();
+					(this.sorteeerModal as any).addToDailyNote();
 					break;
 			}
 		}
