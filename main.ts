@@ -476,9 +476,10 @@ class SorteeerModal extends Modal {
 			return;
 		}
 
-		const urlMatch = this.currentNote.basename.match(/\bhttps?:\/\/\S+/i);
+		const content = await this.app.vault.read(this.currentNote);
+		const urlMatch = content.match(/\bhttps?:\/\/\S+/i) || this.currentNote.basename.match(/\bhttps?:\/\/\S+/i);
 		if (!urlMatch) {
-			this.plugin.showNotification('No URL found in the note title');
+			this.plugin.showNotification('No URL found in the note');
 			return;
 		}
 
