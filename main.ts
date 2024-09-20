@@ -233,9 +233,14 @@ export default class SorteeerPlugin extends Plugin {
 	}
 
 	async fetchUrlContent(url: string, retries = 3): Promise<{ [key: string]: string }> {
+		const corsProxyUrl = 'https://cors-anywhere.herokuapp.com/';
 		for (let i = 0; i < retries; i++) {
 			try {
-				const response = await fetch(url);
+				const response = await fetch(corsProxyUrl + url, {
+					headers: {
+						'Origin': 'https://obsidian.md'
+					}
+				});
 				const html = await response.text();
 				const parser = new DOMParser();
 				const doc = parser.parseFromString(html, 'text/html');
