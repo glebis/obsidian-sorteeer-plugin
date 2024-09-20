@@ -952,7 +952,7 @@ async function generateFilenameWithGroq(content: string, apiKey: string, model: 
 		model: model,
 		messages: [
 			{role: "system", content: "You are a helpful assistant that generates concise and descriptive filenames based on the content provided."},
-			{role: "user", content: `Generate a concise and descriptive filename for an Obsidian vault. The filename should be 3 to 7 words long, human-readable, and suitable for quick access. Spaces are allowed, but do not include underscores. Base the filename on the following content:\n\n${content.slice(0, 1000)}`}
+			{role: "user", content: `Generate a concise and descriptive filename for a file in an Obsidian vault. The filename should be 3 to 7 words long, human-readable, and suitable for quick access. Spaces are allowed, but do not include underscores. Base the filename on the following content:\n\n${content.slice(0, 1000)}`}
 		],
 		max_tokens: 50
 	});
