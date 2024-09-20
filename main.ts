@@ -13,6 +13,7 @@ interface SorteeerSettings {
 	dailyNoteFolder: string;
 	dailyNoteSection: string;
 	showNotifications: boolean;
+	urlFetchFields: string[];
 }
 
 interface DeletedNote {
@@ -69,7 +70,8 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	dailyNoteFormat: 'YYYY-MM-DD',
 	dailyNoteFolder: '/',
 	dailyNoteSection: '## Reviewed',
-	showNotifications: true
+	showNotifications: true,
+	urlFetchFields: ['title', 'description', 'image']
 }
 
 interface ActionStats {
@@ -228,6 +230,43 @@ export default class SorteeerPlugin extends Plugin {
 		if (this.settings.showNotifications) {
 			new Notice(message);
 		}
+	}
+
+	async fetchUrlContent(url: string, retries = 3): Promise<{ [key: string]: string }> {
+		for (let i = 0; i < retries; i++) {
+			try {
+				const response = await fetch(url);
+				const html = await response.text();
+				const parser = new DOMParser();
+				const doc = parser.parseFromString(html, 'text/html');
+
+				const result: { [key: string]: string } = {};
+
+				this.settings.urlFetchFields.forEach(field => {
+					switch (field) {
+						case 'title':
+							result.title = doc.querySelector('title')?.textContent || '';
+							break;
+						case 'description':
+							result.description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+												 doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
+							break;
+						case 'image':
+							result.image = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+							break;
+						default:
+							result[field] = doc.querySelector(`meta[property="og:${field}"]`)?.getAttribute('content') || 
+											doc.querySelector(`meta[name="${field}"]`)?.getAttribute('content') || '';
+					}
+				});
+
+				return result;
+			} catch (error) {
+				console.error(`Error fetching URL (attempt ${i + 1}):`, error);
+				if (i === retries - 1) throw error;
+			}
+		}
+		throw new Error('Failed to fetch URL after multiple attempts');
 	}
 
 	async addToDailyNote(currentNote: TFile | null) {
@@ -419,12 +458,48 @@ class SorteeerModal extends Modal {
 		const noteContent = contentEl.createDiv('note-content');
 		await MarkdownRenderer.renderMarkdown(content, noteContent, note.path, this.plugin);
 
+		// Add "Fetch URL" button
+		const fetchUrlButton = contentEl.createEl('button', {text: 'Fetch URL', cls: 'sorteeer-fetch-url'});
+		fetchUrlButton.addEventListener('click', () => this.fetchAndAddUrlContent());
+
 		// Add event listener for keyboard shortcuts
 		contentEl.addEventListener('keydown', this.onKeyDown);
 
 		this.createFooter();
 
 		this.focusSkipButton();
+	}
+
+	async fetchAndAddUrlContent() {
+		const urlMatch = this.currentNote?.basename.match(/\bhttps?:\/\/\S+/i);
+		if (!urlMatch) {
+			this.plugin.showNotification('No URL found in the note title');
+			return;
+		}
+
+		const url = urlMatch[0];
+		try {
+			this.plugin.showNotification('Fetching URL content...');
+			const content = await this.plugin.fetchUrlContent(url);
+			let markdown = '\n\n## URL Content\n';
+			for (const [key, value] of Object.entries(content)) {
+				if (value) {
+					if (key === 'image') {
+						markdown += `![${key}](${value})\n`;
+					} else {
+						markdown += `**${key}**: ${value}\n`;
+					}
+				}
+			}
+
+			const noteContent = await this.app.vault.read(this.currentNote);
+			await this.app.vault.modify(this.currentNote, noteContent + markdown);
+			this.plugin.showNotification('URL content added successfully');
+			this.displayNote(this.currentNote);
+		} catch (error) {
+			console.error('Error fetching URL content:', error);
+			this.plugin.showNotification('Failed to fetch URL content. Please try again.');
+		}
 	}
 
 	displayEmptyFolderMessage(message: string) {
@@ -972,6 +1047,17 @@ class SorteeerSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.showNotifications)
 				.onChange(async (value) => {
 					this.plugin.settings.showNotifications = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('URL Fetch Fields')
+			.setDesc('Fields to fetch when fetching URL content (comma-separated)')
+			.addText(text => text
+				.setPlaceholder('title,description,image')
+				.setValue(this.plugin.settings.urlFetchFields.join(','))
+				.onChange(async (value) => {
+					this.plugin.settings.urlFetchFields = value.split(',').map(field => field.trim());
 					await this.plugin.saveSettings();
 				}));
 
