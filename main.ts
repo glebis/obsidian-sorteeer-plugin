@@ -233,45 +233,58 @@ export default class SorteeerPlugin extends Plugin {
 	}
 
 	async fetchUrlContent(url: string, retries = 3): Promise<{ [key: string]: string }> {
-		const corsProxyUrl = 'https://cors-anywhere.herokuapp.com/';
+		const corsProxies = [
+			'https://cors-anywhere.herokuapp.com/',
+			'https://api.allorigins.win/raw?url='
+		];
+
 		for (let i = 0; i < retries; i++) {
-			try {
-				const response = await fetch(corsProxyUrl + url, {
-					headers: {
-						'Origin': 'https://obsidian.md'
+			for (const proxyUrl of corsProxies) {
+				try {
+					const response = await fetch(proxyUrl + url, {
+						headers: {
+							'Origin': 'https://obsidian.md'
+						}
+					});
+					
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
 					}
-				});
-				const html = await response.text();
-				const parser = new DOMParser();
-				const doc = parser.parseFromString(html, 'text/html');
 
-				const result: { [key: string]: string } = {};
+					const html = await response.text();
+					const parser = new DOMParser();
+					const doc = parser.parseFromString(html, 'text/html');
 
-				this.settings.urlFetchFields.forEach(field => {
-					switch (field) {
-						case 'title':
-							result.title = doc.querySelector('title')?.textContent || '';
-							break;
-						case 'description':
-							result.description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
-												 doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
-							break;
-						case 'image':
-							result.image = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
-							break;
-						default:
-							result[field] = doc.querySelector(`meta[property="og:${field}"]`)?.getAttribute('content') || 
-											doc.querySelector(`meta[name="${field}"]`)?.getAttribute('content') || '';
+					const result: { [key: string]: string } = {};
+
+					this.settings.urlFetchFields.forEach(field => {
+						switch (field) {
+							case 'title':
+								result.title = doc.querySelector('title')?.textContent || '';
+								break;
+							case 'description':
+								result.description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
+													 doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
+								break;
+							case 'image':
+								result.image = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
+								break;
+							default:
+								result[field] = doc.querySelector(`meta[property="og:${field}"]`)?.getAttribute('content') || 
+												doc.querySelector(`meta[name="${field}"]`)?.getAttribute('content') || '';
+						}
+					});
+
+					return result;
+				} catch (error) {
+					console.error(`Error fetching URL with proxy ${proxyUrl} (attempt ${i + 1}):`, error);
+					if (i === retries - 1 && proxyUrl === corsProxies[corsProxies.length - 1]) {
+						throw error;
 					}
-				});
-
-				return result;
-			} catch (error) {
-				console.error(`Error fetching URL (attempt ${i + 1}):`, error);
-				if (i === retries - 1) throw error;
+				}
 			}
 		}
-		throw new Error('Failed to fetch URL after multiple attempts');
+		throw new Error('Failed to fetch URL after multiple attempts with different proxies');
 	}
 
 	async addToDailyNote(currentNote: TFile | null) {
