@@ -471,7 +471,12 @@ class SorteeerModal extends Modal {
 	}
 
 	async fetchAndAddUrlContent() {
-		const urlMatch = this.currentNote?.basename.match(/\bhttps?:\/\/\S+/i);
+		if (!this.currentNote) {
+			this.plugin.showNotification('No current note selected');
+			return;
+		}
+
+		const urlMatch = this.currentNote.basename.match(/\bhttps?:\/\/\S+/i);
 		if (!urlMatch) {
 			this.plugin.showNotification('No URL found in the note title');
 			return;
