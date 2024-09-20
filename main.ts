@@ -14,6 +14,8 @@ interface SorteeerSettings {
 	dailyNoteSection: string;
 	showNotifications: boolean;
 	urlFetchFields: string[];
+	groqApiKey: string;
+	groqModel: string;
 }
 
 interface DeletedNote {
@@ -71,7 +73,9 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	dailyNoteFolder: '/',
 	dailyNoteSection: '## Reviewed',
 	showNotifications: true,
-	urlFetchFields: ['title', 'description', 'image']
+	urlFetchFields: ['title', 'description', 'image'],
+	groqApiKey: '',
+	groqModel: 'llama-3.1-8b-instant'
 }
 
 interface ActionStats {
@@ -480,6 +484,10 @@ class SorteeerModal extends Modal {
 		const fetchUrlButton = contentEl.createEl('button', {text: 'Fetch URL', cls: 'sorteeer-fetch-url'});
 		fetchUrlButton.addEventListener('click', () => this.fetchAndAddUrlContent());
 
+		// Add "Generate Filename" button
+		const generateFilenameButton = contentEl.createEl('button', {text: 'Generate Filename', cls: 'sorteeer-generate-filename'});
+		generateFilenameButton.addEventListener('click', () => this.generateFilenameWithGroq());
+
 		// Add event listener for keyboard shortcuts
 		contentEl.addEventListener('keydown', this.onKeyDown);
 
@@ -662,6 +670,23 @@ class SorteeerModal extends Modal {
 			}).open();
 		});
 		footer.createEl('div', {text: `Notes reviewed today: ${reviewed} | Deleted: ${deleted}`});
+	}
+
+	async generateFilenameWithGroq() {
+		if (this.currentNote) {
+			const content = await this.app.vault.read(this.currentNote);
+			try {
+				const newFilename = await generateFilenameWithGroq(content, this.plugin.settings.groqApiKey, this.plugin.settings.groqModel);
+				const newPath = this.currentNote.path.replace(this.currentNote.basename, newFilename);
+				await this.app.fileManager.renameFile(this.currentNote, newPath);
+				this.currentNote = this.app.vault.getAbstractFileByPath(newPath) as TFile;
+				this.plugin.showNotification(`File renamed to: ${newFilename}`);
+				this.displayNote(this.currentNote);
+			} catch (error) {
+				this.plugin.showNotification('Failed to generate filename with GROQ');
+				console.error(error);
+			}
+		}
 	}
 }
 
@@ -917,6 +942,35 @@ class AddLinkModal extends SuggestModal<TFile> {
 	}
 }
 
+async function generateFilenameWithGroq(content: string, apiKey: string, model: string): Promise<string> {
+	const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+	const headers = {
+		'Authorization': `Bearer ${apiKey}`,
+		'Content-Type': 'application/json'
+	};
+	const body = JSON.stringify({
+		model: model,
+		messages: [
+			{role: "system", content: "You are a helpful assistant that generates concise and descriptive filenames based on the content provided."},
+			{role: "user", content: `Generate a concise and descriptive filename (without extension) based on the following content:\n\n${content.slice(0, 1000)}`}
+		],
+		max_tokens: 50
+	});
+
+	try {
+		const response = await fetch(endpoint, {method: 'POST', headers: headers, body: body});
+		const data = await response.json();
+		if (data.choices && data.choices.length > 0) {
+			return data.choices[0].message.content.trim().replace(/[^a-zA-Z0-9-_]/g, '_');
+		} else {
+			throw new Error('No filename generated');
+		}
+	} catch (error) {
+		console.error('Error generating filename with GROQ:', error);
+		throw error;
+	}
+}
+
 class SorteeerSettingTab extends PluginSettingTab {
 	plugin: SorteeerPlugin;
 
@@ -1082,6 +1136,30 @@ class SorteeerSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.urlFetchFields.join(','))
 				.onChange(async (value) => {
 					this.plugin.settings.urlFetchFields = value.split(',').map(field => field.trim());
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('GROQ API Key')
+			.setDesc('API key for GROQ')
+			.addText(text => text
+				.setPlaceholder('Enter your GROQ API key')
+				.setValue(this.plugin.settings.groqApiKey)
+				.onChange(async (value) => {
+					this.plugin.settings.groqApiKey = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('GROQ Model')
+			.setDesc('Model to use for GROQ API calls')
+			.addDropdown(dropdown => dropdown
+				.addOption('llama-3.1-8b-instant', 'LLaMA 3.1 8B Instant')
+				.addOption('llama-3.1-70b-instant', 'LLaMA 3.1 70B Instant')
+				.addOption('mixtral-8x7b-instant', 'Mixtral 8x7B Instant')
+				.setValue(this.plugin.settings.groqModel)
+				.onChange(async (value) => {
+					this.plugin.settings.groqModel = value;
 					await this.plugin.saveSettings();
 				}));
 
