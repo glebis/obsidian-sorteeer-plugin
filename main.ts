@@ -1046,7 +1046,7 @@ class SorteeerSettingTab extends PluginSettingTab {
 			})
 			.addButton(button => button
 				.setButtonText('Select Folder')
-				.onClick(() => {
+				.onClick(async () => {
 					new FolderSuggestModal(this.app, this.plugin, (folder: TFolder) => {
 						this.plugin.settings.moveAction = folder.path;
 						await this.plugin.saveSettings();
