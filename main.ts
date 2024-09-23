@@ -1,4 +1,5 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile, TextComponent } from 'obsidian';
+import { fetchUrlContent } from './url_fetcher';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -16,6 +17,8 @@ interface SorteeerSettings {
 	urlFetchFields: string[];
 	groqApiKey: string;
 	groqModel: string;
+	useTextRazor: boolean;
+	textRazorApiKey: string;
 }
 
 interface DeletedNote {
@@ -75,7 +78,9 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	showNotifications: true,
 	urlFetchFields: ['title', 'description', 'image'],
 	groqApiKey: '',
-	groqModel: 'llama-3.1-8b-instant'
+	groqModel: 'llama-3.1-8b-instant',
+	useTextRazor: false,
+	textRazorApiKey: ''
 }
 
 interface ActionStats {
@@ -236,59 +241,14 @@ export default class SorteeerPlugin extends Plugin {
 		}
 	}
 
-	async fetchUrlContent(url: string, retries = 3): Promise<{ [key: string]: string }> {
-		const corsProxies = [
-			'https://cors-anywhere.herokuapp.com/',
-			'https://api.allorigins.win/raw?url='
-		];
-
-		for (let i = 0; i < retries; i++) {
-			for (const proxyUrl of corsProxies) {
-				try {
-					const response = await fetch(proxyUrl + url, {
-						headers: {
-							'Origin': 'https://obsidian.md'
-						}
-					});
-					
-					if (!response.ok) {
-						throw new Error(`HTTP error! status: ${response.status}`);
-					}
-
-					const html = await response.text();
-					const parser = new DOMParser();
-					const doc = parser.parseFromString(html, 'text/html');
-
-					const result: { [key: string]: string } = {};
-
-					this.settings.urlFetchFields.forEach(field => {
-						switch (field) {
-							case 'title':
-								result.title = doc.querySelector('title')?.textContent || '';
-								break;
-							case 'description':
-								result.description = doc.querySelector('meta[name="description"]')?.getAttribute('content') || 
-													 doc.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
-								break;
-							case 'image':
-								result.image = doc.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
-								break;
-							default:
-								result[field] = doc.querySelector(`meta[property="og:${field}"]`)?.getAttribute('content') || 
-												doc.querySelector(`meta[name="${field}"]`)?.getAttribute('content') || '';
-						}
-					});
-
-					return result;
-				} catch (error) {
-					console.error(`Error fetching URL with proxy ${proxyUrl} (attempt ${i + 1}):`, error);
-					if (i === retries - 1 && proxyUrl === corsProxies[corsProxies.length - 1]) {
-						throw error;
-					}
-				}
-			}
+	async fetchUrlContent(url: string): Promise<{ [key: string]: string }> {
+		try {
+			return await fetchUrlContent(url, this.settings.textRazorApiKey, this.settings.useTextRazor, this.settings.urlFetchFields);
+		} catch (error) {
+			console.error('Error fetching URL content:', error);
+			this.showNotification('Failed to fetch URL content. Please try again.');
+			throw error;
 		}
-		throw new Error('Failed to fetch URL after multiple attempts with different proxies');
 	}
 
 	async addToDailyNote(currentNote: TFile | null) {
@@ -512,7 +472,12 @@ class SorteeerModal extends Modal {
 		const url = urlMatch[0];
 		try {
 			this.plugin.showNotification('Fetching URL content...');
-			const content = await this.plugin.fetchUrlContent(url);
+			const content = await fetchUrlContent(
+				url, 
+				this.plugin.settings.textRazorApiKey, 
+				this.plugin.settings.useTextRazor, 
+				this.plugin.settings.urlFetchFields
+			);
 			let markdown = '\n\n## URL Content\n';
 			for (const [key, value] of Object.entries(content)) {
 				if (value) {
@@ -1167,6 +1132,30 @@ class SorteeerSettingTab extends PluginSettingTab {
 					this.plugin.settings.groqModel = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Use TextRazor for URL Processing')
+			.setDesc('Enable TextRazor API for URL content fetching')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.useTextRazor)
+				.onChange(async (value) => {
+					this.plugin.settings.useTextRazor = value;
+					await this.plugin.saveSettings();
+					refreshDisplay();
+				}));
+
+		if (this.plugin.settings.useTextRazor) {
+			new Setting(containerEl)
+				.setName('TextRazor API Key')
+				.setDesc('API key for TextRazor')
+				.addText(text => text
+					.setPlaceholder('Enter your TextRazor API key')
+					.setValue(this.plugin.settings.textRazorApiKey)
+					.onChange(async (value) => {
+						this.plugin.settings.textRazorApiKey = value;
+						await this.plugin.saveSettings();
+					}));
+		}
 
 		// Add a button to view action stats
 		new Setting(containerEl)
