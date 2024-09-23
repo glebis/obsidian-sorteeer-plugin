@@ -1030,23 +1030,28 @@ class SorteeerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		let moveActionText: TextComponent;
 		new Setting(containerEl)
 			.setName('Move Action')
 			.setDesc('Folder to move notes to on down swipe or down arrow')
-			.addText(text => text
-				.setPlaceholder('Enter folder path')
-				.setValue(this.plugin.settings.moveAction)
-				.onChange(async (value) => {
-					this.plugin.settings.moveAction = value;
-					await this.plugin.saveSettings();
-				}))
+			.addText(text => {
+				text
+					.setPlaceholder('Enter folder path')
+					.setValue(this.plugin.settings.moveAction)
+					.onChange(async (value) => {
+						this.plugin.settings.moveAction = value;
+						await this.plugin.saveSettings();
+					});
+				moveActionText = text;
+			})
 			.addButton(button => button
 				.setButtonText('Select Folder')
 				.onClick(() => {
 					new FolderSuggestModal(this.app, this.plugin, (folder: TFolder) => {
-						this.plugin.settings.sortFolder = folder.path;
-						this.plugin.saveSettings();
-						new Notice(`Sort folder set to: ${folder.path}`);
+						this.plugin.settings.moveAction = folder.path;
+						await this.plugin.saveSettings();
+						moveActionText.setValue(folder.path);
+						new Notice(`Move action folder set to: ${folder.path}`);
 					}).open();
 				}));
 
