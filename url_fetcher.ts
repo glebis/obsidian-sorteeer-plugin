@@ -115,7 +115,7 @@ async function tryGetFileType(url: string) {
     }
 }
 
-export async function fetchUrlContent(url: string, apiKey: string, useTextRazor: boolean, fields: string[]): Promise<UrlFetchResult> {
+export async function fetchUrlContent(url: string, fields: string[]): Promise<UrlFetchResult> {
     if (!(url.startsWith("http") || url.startsWith("https"))) {
         url = "https://" + url;
     }

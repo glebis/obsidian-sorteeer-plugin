@@ -17,8 +17,6 @@ interface SorteeerSettings {
 	urlFetchFields: string[];
 	groqApiKey: string;
 	groqModel: string;
-	useTextRazor: boolean;
-	textRazorApiKey: string;
 	outputImages: boolean;
 	fileRenamingPrompt: string;
 }
@@ -81,8 +79,6 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	urlFetchFields: ['title', 'description', 'image'],
 	groqApiKey: '',
 	groqModel: 'llama-3.1-8b-instant',
-	useTextRazor: false,
-	textRazorApiKey: '',
 	outputImages: true,
 	fileRenamingPrompt: 'Generate a concise and descriptive filename for a file in an Obsidian vault. The filename should be 3 to 7 words long, human-readable, spaces are allowed, no need to use underscores, dashes or other escape sympols. Don\'t add any introduction or conclusion, just the short filename. If there are multiple distinct subjects or different links in the content, create title that helps overview all the subjects. Base filename on the following:\n\n${content.slice(0, 2000)}. Don\'t output underscores, "_".'
 }
@@ -247,7 +243,7 @@ export default class SorteeerPlugin extends Plugin {
 
 	async fetchUrlContent(url: string): Promise<{ [key: string]: string }> {
 		try {
-			return await fetchUrlContent(url, this.settings.textRazorApiKey, this.settings.useTextRazor, this.settings.urlFetchFields);
+			return await fetchUrlContent(url, this.settings.urlFetchFields);
 		} catch (error) {
 			console.error('Error fetching URL content:', error);
 			this.showNotification('Failed to fetch URL content. Please try again.');
@@ -479,8 +475,6 @@ class SorteeerModal extends Modal {
 			try {
 				const fetchedContent = await fetchUrlContent(
 					url,
-					this.plugin.settings.textRazorApiKey,
-					this.plugin.settings.useTextRazor,
 					this.plugin.settings.urlFetchFields
 				);
 
@@ -1157,29 +1151,6 @@ class SorteeerSettingTab extends PluginSettingTab {
 				}))
 			.setClass('sorteeer-file-renaming-prompt');
 
-		new Setting(containerEl)
-			.setName('Use TextRazor for URL Processing')
-			.setDesc('Enable TextRazor API for URL content fetching')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.useTextRazor)
-				.onChange(async (value) => {
-					this.plugin.settings.useTextRazor = value;
-					await this.plugin.saveSettings();
-					refreshDisplay();
-				}));
-
-		if (this.plugin.settings.useTextRazor) {
-			new Setting(containerEl)
-				.setName('TextRazor API Key')
-				.setDesc('API key for TextRazor')
-				.addText(text => text
-					.setPlaceholder('Enter your TextRazor API key')
-					.setValue(this.plugin.settings.textRazorApiKey)
-					.onChange(async (value) => {
-						this.plugin.settings.textRazorApiKey = value;
-						await this.plugin.saveSettings();
-					}));
-		}
 
 		// Add a button to view action stats
 		new Setting(containerEl)
