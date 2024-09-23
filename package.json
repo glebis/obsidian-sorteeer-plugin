@@ -8,7 +8,13 @@
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
-	"keywords": ["obsidian", "plugin", "sorteeer", "notes", "organization"],
+	"keywords": [
+		"obsidian",
+		"plugin",
+		"sorteeer",
+		"notes",
+		"organization"
+	],
 	"author": "Your Name",
 	"license": "MIT",
 	"devDependencies": {
@@ -22,6 +28,8 @@
 		"typescript": "4.7.4"
 	},
 	"dependencies": {
+		"@types/node-fetch": "^2.6.11",
+		"node-fetch": "^3.3.2",
 		"obsidian": "^1.1.1"
 	}
 }
