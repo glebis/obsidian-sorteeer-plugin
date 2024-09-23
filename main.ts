@@ -19,6 +19,7 @@ interface SorteeerSettings {
 	groqModel: string;
 	useTextRazor: boolean;
 	textRazorApiKey: string;
+	outputImages: boolean;
 }
 
 interface DeletedNote {
@@ -80,7 +81,8 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	groqApiKey: '',
 	groqModel: 'llama-3.1-8b-instant',
 	useTextRazor: false,
-	textRazorApiKey: ''
+	textRazorApiKey: '',
+	outputImages: true
 }
 
 interface ActionStats {
@@ -481,20 +483,15 @@ class SorteeerModal extends Modal {
 				);
 
 				if (fetchedContent.title && fetchedContent.title !== "Site Unreachable") {
-					updatedContent = updatedContent.replace(url, `[${fetchedContent.title}](${url})`);
-				}
-
-				let markdown = '\n\n## URL Content\n';
-				for (const [key, value] of Object.entries(fetchedContent)) {
-					if (value) {
-						if (key === 'image') {
-							markdown += `![${key}](${value})\n`;
-						} else {
-							markdown += `**${key}**: ${value}\n`;
-						}
+					let replacement = `[${fetchedContent.title}](${url})`;
+					if (this.plugin.settings.outputImages && fetchedContent.image) {
+						replacement += `\n![](${fetchedContent.image})`;
 					}
+					if (fetchedContent.description) {
+						replacement += `\n${fetchedContent.description}`;
+					}
+					updatedContent = updatedContent.replace(url, replacement);
 				}
-				updatedContent += markdown;
 			} catch (error) {
 				console.error(`Error fetching content for ${url}:`, error);
 				this.plugin.showNotification(`Failed to fetch content for ${url}`);
