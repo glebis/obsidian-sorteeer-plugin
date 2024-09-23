@@ -164,3 +164,8 @@ export async function fetchUrlContent(url: string, apiKey: string, useTextRazor:
 
     return result;
 }
+
+export function extractUnlinkedUrls(content: string): string[] {
+    const urlRegex = /(?<!(\[.*?\]\())(https?:\/\/[^\s\)]+)(?!\))/g;
+    return Array.from(content.matchAll(urlRegex), match => match[0]);
+}

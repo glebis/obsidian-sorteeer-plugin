@@ -1,5 +1,5 @@
 import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile, TFolder, MarkdownRenderer, SuggestModal, TAbstractFile, TextComponent } from 'obsidian';
-import { fetchUrlContent } from './url_fetcher';
+import { fetchUrlContent, extractUnlinkedUrls } from './url_fetcher';
 
 interface SorteeerSettings {
 	sortFolder: string;
@@ -463,40 +463,47 @@ class SorteeerModal extends Modal {
 		}
 
 		const content = await this.app.vault.read(this.currentNote);
-		const urlMatch = content.match(/\bhttps?:\/\/\S+/i) || this.currentNote.basename.match(/\bhttps?:\/\/\S+/i);
-		if (!urlMatch) {
-			this.plugin.showNotification('No URL found in the note');
+		const urls = extractUnlinkedUrls(content);
+		if (urls.length === 0) {
+			this.plugin.showNotification('No unlinked URLs found in the note');
 			return;
 		}
 
-		const url = urlMatch[0];
-		try {
-			this.plugin.showNotification('Fetching URL content...');
-			const content = await fetchUrlContent(
-				url, 
-				this.plugin.settings.textRazorApiKey, 
-				this.plugin.settings.useTextRazor, 
-				this.plugin.settings.urlFetchFields
-			);
-			let markdown = '\n\n## URL Content\n';
-			for (const [key, value] of Object.entries(content)) {
-				if (value) {
-					if (key === 'image') {
-						markdown += `![${key}](${value})\n`;
-					} else {
-						markdown += `**${key}**: ${value}\n`;
+		this.plugin.showNotification('Fetching URL content...');
+		let updatedContent = content;
+		for (const url of urls) {
+			try {
+				const fetchedContent = await fetchUrlContent(
+					url,
+					this.plugin.settings.textRazorApiKey,
+					this.plugin.settings.useTextRazor,
+					this.plugin.settings.urlFetchFields
+				);
+
+				if (fetchedContent.title && fetchedContent.title !== "Site Unreachable") {
+					updatedContent = updatedContent.replace(url, `[${fetchedContent.title}](${url})`);
+				}
+
+				let markdown = '\n\n## URL Content\n';
+				for (const [key, value] of Object.entries(fetchedContent)) {
+					if (value) {
+						if (key === 'image') {
+							markdown += `![${key}](${value})\n`;
+						} else {
+							markdown += `**${key}**: ${value}\n`;
+						}
 					}
 				}
+				updatedContent += markdown;
+			} catch (error) {
+				console.error(`Error fetching content for ${url}:`, error);
+				this.plugin.showNotification(`Failed to fetch content for ${url}`);
 			}
-
-			const noteContent = await this.app.vault.read(this.currentNote);
-			await this.app.vault.modify(this.currentNote, noteContent + markdown);
-			this.plugin.showNotification('URL content added successfully');
-			this.displayNote(this.currentNote);
-		} catch (error) {
-			console.error('Error fetching URL content:', error);
-			this.plugin.showNotification('Failed to fetch URL content. Please try again.');
 		}
+
+		await this.app.vault.modify(this.currentNote, updatedContent);
+		this.plugin.showNotification('URL content added successfully');
+		this.displayNote(this.currentNote);
 	}
 
 	displayEmptyFolderMessage(message: string) {
