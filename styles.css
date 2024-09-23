@@ -253,3 +253,9 @@
 .sorteeer-modal .sorteeer-settings-link:hover {
     text-decoration: none;
 }
+.sorteeer-file-renaming-prompt textarea {
+    width: 100%;
+    min-height: 100px;
+    font-family: monospace;
+    resize: vertical;
+}

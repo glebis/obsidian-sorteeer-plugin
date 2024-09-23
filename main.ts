@@ -20,6 +20,7 @@ interface SorteeerSettings {
 	useTextRazor: boolean;
 	textRazorApiKey: string;
 	outputImages: boolean;
+	fileRenamingPrompt: string;
 }
 
 interface DeletedNote {
@@ -82,7 +83,8 @@ const DEFAULT_SETTINGS: SorteeerSettings = {
 	groqModel: 'llama-3.1-8b-instant',
 	useTextRazor: false,
 	textRazorApiKey: '',
-	outputImages: true
+	outputImages: true,
+	fileRenamingPrompt: 'Generate a concise and descriptive filename for a file in an Obsidian vault. The filename should be 3 to 7 words long, human-readable, spaces are allowed, no need to use underscores, dashes or other escape sympols. Don\'t add any introduction or conclusion, just the short filename. If there are multiple distinct subjects or different links in the content, create title that helps overview all the subjects. Base filename on the following:\n\n${content.slice(0, 2000)}. Don\'t output underscores, "_".'
 }
 
 interface ActionStats {
@@ -645,14 +647,15 @@ class SorteeerModal extends Modal {
 		if (this.currentNote) {
 			const content = await this.app.vault.read(this.currentNote);
 			try {
-				const newFilename = await generateFilenameWithGroq(content, this.plugin.settings.groqApiKey, this.plugin.settings.groqModel);
+				const newFilename = await generateFilenameWithGroq(content, this.plugin.settings.groqApiKey, this.plugin.settings.groqModel, this.plugin.settings.fileRenamingPrompt);
+				console.log('Raw generated filename:', newFilename); // Add this line
 				const newPath = this.currentNote.path.replace(this.currentNote.basename, newFilename);
 				await this.app.fileManager.renameFile(this.currentNote, newPath);
 				this.currentNote = this.app.vault.getAbstractFileByPath(newPath) as TFile;
 				this.plugin.showNotification(`File renamed to: ${newFilename}`);
 				this.displayNote(this.currentNote);
 			} catch (error) {
-				this.plugin.showNotification('Failed to generate filename with GROQ');
+				this.plugin.showNotification('Failed to generate filename with Groq');
 				console.error(error);
 			}
 		}
@@ -911,31 +914,36 @@ class AddLinkModal extends SuggestModal<TFile> {
 	}
 }
 
-async function generateFilenameWithGroq(content: string, apiKey: string, model: string): Promise<string> {
+async function generateFilenameWithGroq(content: string, apiKey: string, model: string, prompt: string): Promise<string> {
 	const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
 	const headers = {
 		'Authorization': `Bearer ${apiKey}`,
 		'Content-Type': 'application/json'
 	};
+	const formattedPrompt = prompt.replace('${content.slice(0, 2000)}', content.slice(0, 2000));
+    
+    console.log('Full prompt being sent to LLM:', formattedPrompt); // Log the full prompt
+
 	const body = JSON.stringify({
 		model: model,
 		messages: [
-			{role: "system", content: "You are a helpful assistant that generates concise and descriptive filenames based on the content provided."},
-			{role: "user", content: `Generate a concise and descriptive filename for a file in an Obsidian vault. The filename should be 3 to 7 words long, human-readable, and suitable for quick access. Spaces are allowed, but do not include underscores. Don't add any introduction or conclusion, just the filename. Base the filename on the following content:\n\n${content.slice(0, 1000)}`}
+			{role: "system", content: "You are a helpful assistant."},
+			{role: "user", content: formattedPrompt}
 		],
-		max_tokens: 50
+		max_tokens: 50,
+		temperature: 0.3
 	});
 
 	try {
 		const response = await fetch(endpoint, {method: 'POST', headers: headers, body: body});
 		const data = await response.json();
 		if (data.choices && data.choices.length > 0) {
-			return data.choices[0].message.content.trim().replace(/[^a-zA-Z0-9-_]/g, '_');
+			return data.choices[0].message.content.trim().replace(/[^a-zA-Z0-9-_ ]/g, ' ').replace(/_/g, ' ');
 		} else {
 			throw new Error('No filename generated');
 		}
 	} catch (error) {
-		console.error('Error generating filename with GROQ:', error);
+		console.error('Error generating filename with Groq:', error);
 		throw error;
 	}
 }
@@ -1136,6 +1144,18 @@ class SorteeerSettingTab extends PluginSettingTab {
 					this.plugin.settings.groqModel = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('File Renaming Prompt')
+			.setDesc('Prompt to use for generating new filenames')
+			.addTextArea(text => text
+				.setPlaceholder('Enter the prompt for file renaming')
+				.setValue(this.plugin.settings.fileRenamingPrompt)
+				.onChange(async (value) => {
+					this.plugin.settings.fileRenamingPrompt = value;
+					await this.plugin.saveSettings();
+				}))
+			.setClass('sorteeer-file-renaming-prompt');
 
 		new Setting(containerEl)
 			.setName('Use TextRazor for URL Processing')
